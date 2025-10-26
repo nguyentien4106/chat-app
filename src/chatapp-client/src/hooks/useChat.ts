@@ -56,7 +56,14 @@ export const useChat = (): UseChatReturn => {
   }, []);
 
   const addMessage = useCallback((message: Message) => {
-    setMessages(prev => [...prev, message]);
+    setMessages(prev => {
+      // Check if message already exists to prevent duplicates
+      const messageExists = prev.some(m => m.id === message.id);
+      if (messageExists) {
+        return prev;
+      }
+      return [...prev, message];
+    });
   }, []);
 
   const createGroup = useCallback(async (name: string, description?: string) => {

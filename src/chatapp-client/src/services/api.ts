@@ -32,6 +32,12 @@ class ApiService {
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
+        
+        // Don't set Content-Type for FormData - let browser set it with boundary
+        if (config.data instanceof FormData) {
+          delete config.headers['Content-Type'];
+        }
+        
         return config;
       },
       (error) => {
@@ -68,6 +74,11 @@ class ApiService {
         case 404:
           toast.error('Not Found', { description: message });
           break;
+        case 415:
+          toast.error('Unsupported Media Type', { 
+            description: 'Invalid file format or content type' 
+          });
+          break;
         case 500:
           toast.error('Server Error', { description: 'Something went wrong' });
           break;
@@ -92,8 +103,8 @@ class ApiService {
     return response.data.data;
   }
 
-  async post<T>(url: string, data?: any): Promise<T> {
-    const response = await this.client.post<AppResponse<T>>(url, data);
+  async post<T>(url: string, data?: any, config?: any): Promise<T> {
+    const response = await this.client.post<AppResponse<T>>(url, data, config);
     const resData = response.data;
     if(resData.isSuccess === false){
       throw new Error(resData.errors.join(', '));
@@ -102,8 +113,8 @@ class ApiService {
     return resData.data;
   }
 
-  async put<T>(url: string, data?: any): Promise<T> {
-    const response = await this.client.put<AppResponse<T>>(url, data);
+  async put<T>(url: string, data?: any, config?: any): Promise<T> {
+    const response = await this.client.put<AppResponse<T>>(url, data, config);
     if(response.data.isSuccess === false){
       throw new Error(response.data.errors.join(', '));
     }

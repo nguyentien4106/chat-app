@@ -30,7 +30,7 @@ import { useFileUpload } from "@/hooks/useFileUpload";
 // Add this to the top of ChatApp.tsx imports
 import { useUserSearch } from "@/hooks/useUserSearch";
 import { Search } from "lucide-react";
-import { UserDto } from "@/types/chat.types";
+import { Message, SendMessageRequest, UserDto } from "@/types/chat.types";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Types
@@ -185,19 +185,18 @@ const ChatApp: React.FC = () => {
         fileData = await uploadFile(selectedFile);
       }
 
-      const messageData = {
-        content: messageInput || undefined,
+      const messageData: SendMessageRequest = {
+        messageType: fileData ? fileData.messageType : MessageType.Text,
+        content: messageInput.trim() || "",
+        groupId: activeChat.type === "user" ? undefined : activeChat.id,
         receiverId: activeChat.type === "user" ? activeChat.id : undefined,
-        groupId: activeChat.type === "group" ? activeChat.id : undefined,
-        type: fileData ? fileData.messageType : MessageType.Text,
-        fileUrl: fileData?.fileUrl,
-        fileName: fileData?.fileName,
-        fileType: fileData?.fileType,
-        fileSize: fileData?.fileSize,
+        fileUrl: fileData ? fileData.fileUrl : undefined,
+        fileName: fileData ? fileData.fileName : undefined,
+        fileSize  : fileData ? fileData.fileSize : undefined,
+        fileType  : fileData ? fileData.fileType : undefined,
       };
 
       const newMessage = await sendSignalRMessage(messageData);
-      console.log("Sent message:", newMessage);
       addMessage(newMessage!);
       setMessageInput("");
       clearSelection();
@@ -269,9 +268,9 @@ const ChatApp: React.FC = () => {
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   };
 
-  const renderMessage = (msg: any) => {
+  const renderMessage = (msg: Message) => {
     const isOwn = msg.senderId === user?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
-
+    console.log(msg)
     return (
       <div
         key={msg.id}
@@ -288,7 +287,7 @@ const ChatApp: React.FC = () => {
             </p>
           )}
 
-          {msg.type === MessageType.Image && msg.fileUrl && (
+          {msg.messageType === MessageType.Image && msg.fileUrl && (
             <div className="mb-2">
               <img
                 src={msg.fileUrl}
@@ -299,7 +298,7 @@ const ChatApp: React.FC = () => {
             </div>
           )}
 
-          {msg.type === MessageType.File && msg.fileUrl && (
+          {msg.messageType === MessageType.File && msg.fileUrl && (
             <div className="flex items-center space-x-2 mb-2 p-2 bg-white bg-opacity-20 rounded">
               <Paperclip className="w-4 h-4" />
               <div className="flex-1 min-w-0">

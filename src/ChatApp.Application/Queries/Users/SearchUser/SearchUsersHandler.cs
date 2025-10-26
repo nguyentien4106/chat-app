@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-namespace ChatApp.Application.Queries.Users.SearchUser;
-
-public class SearchUsersHandler
-{
-    
-=======
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Interfaces;
 using ChatApp.Application.Models;
@@ -39,5 +32,4 @@ public class SearchUsersHandler: IQueryHandler<SearchUsersQuery, AppResponse<Lis
 
         return AppResponse<List<UserDto>>.Success(users);
     }
->>>>>>> a957673 (initial)
 }

@@ -53,7 +53,7 @@ public class ChatAppDbContext(DbContextOptions<ChatAppDbContext> options) : Iden
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Content).HasMaxLength(4000);
-                entity.Property(e => e.Type).IsRequired();
+                entity.Property(e => e.MessageType).IsRequired();
                 entity.Property(e => e.FileUrl).HasMaxLength(500);
                 entity.Property(e => e.FileName).HasMaxLength(255);
                 entity.Property(e => e.FileType).HasMaxLength(100);

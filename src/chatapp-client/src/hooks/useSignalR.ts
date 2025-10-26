@@ -33,14 +33,20 @@ export const useSignalR = (): UseSignalRReturn => {
       .configureLogging(signalR.LogLevel.Information)
       .build();
 
+    let isSubscribed = true;
+
     newConnection.start()
       .then(() => {
-        console.log('SignalR Connected');
-        setIsConnected(true);
+        if (isSubscribed) {
+          console.log('SignalR Connected');
+          setIsConnected(true);
+        }
       })
       .catch(err => {
-        console.error('SignalR Connection Error:', err);
-        setIsConnected(false);
+        if (isSubscribed) {
+          console.error('SignalR Connection Error:', err);
+          setIsConnected(false);
+        }
       });
 
     newConnection.onreconnecting(() => {
@@ -61,7 +67,13 @@ export const useSignalR = (): UseSignalRReturn => {
     setConnection(newConnection);
 
     return () => {
-      newConnection.stop();
+      isSubscribed = false;
+      if (newConnection.state === signalR.HubConnectionState.Connected || 
+          newConnection.state === signalR.HubConnectionState.Connecting) {
+        newConnection.stop().catch(err => {
+          console.error('Error stopping connection:', err);
+        });
+      }
     };
   }, []);
 

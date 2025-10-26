@@ -1,12 +1,7 @@
-<<<<<<< HEAD
-namespace ChatApp.Infrastructure.Services;
-
-public class R2StorageService
-{
-    
-}
-=======
 // Infrastructure/Services/R2StorageService.cs
+
+using Amazon;
+using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 using ChatApp.Application.Interfaces;
@@ -17,27 +12,41 @@ namespace ChatApp.Infrastructure.Services;
 
 public class R2StorageService(R2Settings r2Settings) : IStorageService
 {
-    private readonly IAmazonS3 _s3Client = new AmazonS3Client(r2Settings.AccessKey, r2Settings.SecretKey, new AmazonS3Config
+    private readonly IAmazonS3 _s3Client = new AmazonS3Client(new BasicAWSCredentials(r2Settings.AccessKey, r2Settings.SecretKey), new AmazonS3Config
     {
         ServiceURL = $"https://{r2Settings.AccountId}.r2.cloudflarestorage.com",
     });
     
     public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType)
     {
-        var key = $"chat-files/{Guid.NewGuid()}/{fileName}";
-
-        var request = new PutObjectRequest
+        try
         {
-            BucketName = r2Settings.BucketName,
-            Key = key,
-            InputStream = fileStream,
-            ContentType = contentType,
-            CannedACL = S3CannedACL.PublicRead
-        };
+            var key = $"chat-files/{Guid.NewGuid()}/{fileName}";
 
-        await _s3Client.PutObjectAsync(request);
+            var request = new PutObjectRequest
+            {
+                BucketName = r2Settings.BucketName,
+                Key = key,
+                InputStream = fileStream,
+                ContentType = contentType,
+                DisablePayloadSigning = true,
+                DisableDefaultChecksumValidation = true
+            };
 
-        return $"{r2Settings.PublicUrl}/{key}";
+            var result = await _s3Client.PutObjectAsync(request);
+
+            // Check if upload was successful (HTTP 200 status code)
+            if (result.HttpStatusCode == System.Net.HttpStatusCode.OK)
+            {
+                return await GeneratePresignedUrlAsync(key);
+            }
+            
+            throw new Exception($"Upload failed with status code: {result.HttpStatusCode}");
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Failed to upload file: {ex.Message}", ex);
+        }
     }
 
     public async Task<bool> DeleteFileAsync(string fileUrl)
@@ -65,5 +74,17 @@ public class R2StorageService(R2Settings r2Settings) : IStorageService
     {
         return $"{r2Settings.PublicUrl}/{fileName}";
     }
+
+    private async Task<string?> GeneratePresignedUrlAsync(string key)
+    {
+        var presign = new GetPreSignedUrlRequest
+        {
+            BucketName = r2Settings.BucketName,
+            Key = key,
+            Verb = HttpVerb.GET,
+            Expires = DateTime.Now.AddDays(7),
+        };
+
+        return await _s3Client.GetPreSignedURLAsync(presign);
+    }
 }
->>>>>>> a957673 (initial)

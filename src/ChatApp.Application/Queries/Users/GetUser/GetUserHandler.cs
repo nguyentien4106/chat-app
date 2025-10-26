@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-namespace ChatApp.Application.Queries.Users.GetUser;
-
-public class GetUserHandler
-{
-    
-=======
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Interfaces;
 using ChatApp.Application.Models;
@@ -40,5 +33,4 @@ public class GetUserHandler : IQueryHandler<GetUserQuery, AppResponse<UserDto>>
 
         return AppResponse<UserDto>.Success(user);
     }
->>>>>>> a957673 (initial)
 }

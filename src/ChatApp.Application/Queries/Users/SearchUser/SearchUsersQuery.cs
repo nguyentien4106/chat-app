@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-namespace ChatApp.Application.Queries.Users.SearchUser;
-
-public class SearchUsersQuery
-{
-    
-=======
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Models;
 
@@ -15,5 +8,4 @@ public class SearchUsersQuery : IQuery<AppResponse<List<UserDto>>>
 {
     public string SearchTerm { get; set; } = string.Empty;
     public Guid CurrentUserId { get; set; }
->>>>>>> a957673 (initial)
 }

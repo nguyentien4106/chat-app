@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-namespace ChatApp.Application.Commands.Groups.JoinGroup;
-
-public class JoinGroupHandler
-{
-    
-=======
 using ChatApp.Application.Interfaces;
 using ChatApp.Application.Models;
 using MediatR;
@@ -49,5 +42,4 @@ public class JoinGroupHandler: ICommandHandler<JoinGroupByInviteCommand, AppResp
 
         return AppResponse<Unit>.Success(Unit.Value);
     }
->>>>>>> a957673 (initial)
 }

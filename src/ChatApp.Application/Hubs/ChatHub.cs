@@ -1,21 +1,15 @@
 using System.Security.Claims;
 using ChatApp.Application.Commands.Messages.SendMessage;
-<<<<<<< HEAD
-=======
 using ChatApp.Application.DTOs.Common;
->>>>>>> a957673 (initial)
 using ChatApp.Application.Queries.Groups.GetUserGroups;
+using ChatApp.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 // Infrastructure/Hubs/ChatHub.cs
 
-<<<<<<< HEAD
-namespace ChatApp.Api.Hubs;
-=======
 namespace ChatApp.Application.Hubs;
->>>>>>> a957673 (initial)
 
 
 [Authorize]
@@ -28,11 +22,6 @@ public class ChatHub : Hub
         _mediator = mediator;
     }
 
-<<<<<<< HEAD
-    public override async Task OnConnectedAsync()
-    {
-        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-=======
     private string? GetUserId()
     {
         // Try ClaimTypes.NameIdentifier first
@@ -55,19 +44,12 @@ public class ChatHub : Hub
     public override async Task OnConnectedAsync()
     {
         var userId = GetUserId();
->>>>>>> a957673 (initial)
         if (!string.IsNullOrEmpty(userId))
         {
             // Join user to their personal channel
             await Groups.AddToGroupAsync(Context.ConnectionId, userId);
 
             // Join user to all their groups
-<<<<<<< HEAD
-            var userGroups = await _mediator.Send(new GetUserGroupsQuery { UserId = Guid.Parse(userId) });
-            foreach (var group in userGroups)
-            {
-                await Groups.AddToGroupAsync(Context.ConnectionId, group.Id.ToString());
-=======
             var userGroupsResponse = await _mediator.Send(new GetUserGroupsQuery { UserId = Guid.Parse(userId) });
             if (userGroupsResponse.IsSuccess && userGroupsResponse.Data != null)
             {
@@ -75,7 +57,6 @@ public class ChatHub : Hub
                 {
                     await Groups.AddToGroupAsync(Context.ConnectionId, group.Id.ToString());
                 }
->>>>>>> a957673 (initial)
             }
         }
 
@@ -87,33 +68,19 @@ public class ChatHub : Hub
         await base.OnDisconnectedAsync(exception);
     }
 
-<<<<<<< HEAD
-    public async Task SendMessage(SendMessageRequest request)
-    {
-        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-=======
     public async Task<AppResponse<MessageDto>> SendMessage(SendMessageRequest request)
     {
         var userId = GetUserId();
->>>>>>> a957673 (initial)
         if (string.IsNullOrEmpty(userId))
         {
             throw new HubException("User not authenticated");
         }
 
-        var command = new SendMessageCommand
-        {
-            SenderId = Guid.Parse(userId),
-            ReceiverId = request.ReceiverId,
-            GroupId = request.GroupId,
-            Content = request.Content
-        };
+        request.SenderId = GetUserId();
 
-<<<<<<< HEAD
-        await _mediator.Send(command);
-=======
+        var command = request.Adapt<SendMessageCommand>();
+
         return await _mediator.Send(command);
->>>>>>> a957673 (initial)
     }
 
     public async Task JoinGroup(Guid groupId)
@@ -155,7 +122,18 @@ public class ChatHub : Hub
 
 public class SendMessageRequest
 {
+    public string? SenderId { get; set; }
     public Guid? ReceiverId { get; set; }
     public Guid? GroupId { get; set; }
-    public string Content { get; set; } = string.Empty;
+    public string? Content { get; set; } = string.Empty;
+    
+    public MessageTypes MessageType { get; set; }
+    
+    public string? FileUrl { get; set; }
+    
+    public string? FileName { get; set; }
+    
+    public string? FileType { get; set; }
+    
+    public long FileSize { get; set; }
 }

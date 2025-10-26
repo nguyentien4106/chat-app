@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-namespace ChatApp.Application.Commands.Groups.AddUserToGroup;
-
-public class AddUserToGroupHandler
-{
-    
-=======
 using ChatApp.Application.Hubs;
 using ChatApp.Application.Interfaces;
 using ChatApp.Application.Models;
@@ -61,5 +54,4 @@ public class AddMemberToGroupHandler : ICommandHandler<AddMemberToGroupCommand, 
 
         return AppResponse<Unit>.Success(Unit.Value);
     }
->>>>>>> a957673 (initial)
 }

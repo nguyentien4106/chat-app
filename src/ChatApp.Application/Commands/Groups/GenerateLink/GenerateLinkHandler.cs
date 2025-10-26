@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-namespace ChatApp.Application.Commands.Groups.GenerateLink;
-
-public class GenerateLinkHandler
-{
-    
-=======
 using ChatApp.Application.Interfaces;
 using ChatApp.Application.Models;
 using Microsoft.EntityFrameworkCore;
@@ -39,5 +32,4 @@ public class GenerateLinkHandler: ICommandHandler<GenerateLinkCommand, AppRespon
 
         return AppResponse<string>.Success(group.InviteCode);
     }
->>>>>>> a957673 (initial)
 }

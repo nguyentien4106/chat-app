@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-namespace ChatApp.Application.Queries.Groups.GetUserConversations;
-
-public class GetUserConversationsHandler
-{
-    
-=======
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Interfaces;
 using ChatApp.Application.Models;
@@ -57,5 +50,4 @@ public class GetUserConversationsHandler: IRequestHandler<GetUserConversationsQu
 
         return AppResponse<List<ConversationDto>>.Success(result.OrderByDescending(c => c.LastMessageAt).ToList());
     }
->>>>>>> a957673 (initial)
 }

@@ -1,12 +1,4 @@
-<<<<<<< HEAD
-namespace ChatApp.Api.Controllers;
 
-public class FilesController
-{
-    
-}
-=======
-using System.Security.Claims;
 using ChatApp.Api.Controllers.Base;
 using ChatApp.Application.Commands.Messages.SendMessage;
 using ChatApp.Application.DTOs.Common;
@@ -95,7 +87,7 @@ public class FilesController : AuthenticatedControllerBase
             ReceiverId = request.ReceiverId,
             GroupId = request.GroupId,
             Content = request.Content,
-            Type = request.Type,
+            MessageType = request.Type,
             FileUrl = request.FileUrl,
             FileName = request.FileName,
             FileType = request.FileType,
@@ -142,4 +134,3 @@ public class SendFileMessageRequest
     public string FileType { get; set; } = string.Empty;
     public long FileSize { get; set; }
 }
->>>>>>> a957673 (initial)

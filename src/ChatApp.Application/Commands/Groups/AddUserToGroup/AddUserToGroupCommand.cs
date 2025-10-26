@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-namespace ChatApp.Application.Commands.Groups.AddUserToGroup;
-
-public class AddUserToGroupCommand
-{
-    
-}
-=======
 using ChatApp.Application.Models;
 using MediatR;
 
@@ -18,5 +10,3 @@ public class AddMemberToGroupCommand : ICommand<AppResponse<Unit>>
     public Guid UserId { get; set; }
     public Guid AddedById { get; set; }
 }
-
->>>>>>> a957673 (initial)

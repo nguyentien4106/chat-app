@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-namespace ChatApp.Application.Commands.Groups.CreateGroup;
-
-public class CreateGroupHandler
-{
-    
-}
-=======
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Interfaces;
 using ChatApp.Application.Models;
@@ -58,4 +50,3 @@ public class CreateGroupHandler : ICommandHandler<CreateGroupCommand, AppRespons
         return AppResponse<GroupDto>.Success(groupDto);
     }
 }
->>>>>>> a957673 (initial)

@@ -20,7 +20,7 @@ export interface Message {
   receiverId?: string;
   groupId?: string;
   content?: string;
-  type: MessageType;
+  messageType: MessageType;
   fileUrl?: string;
   fileName?: string;
   fileType?: string;
@@ -56,7 +56,7 @@ export interface SendMessageRequest {
   content?: string;
   receiverId?: string;
   groupId?: string;
-  type: MessageType;
+  messageType: MessageType;
   fileUrl?: string;
   fileName?: string;
   fileType?: string;

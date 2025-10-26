@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-namespace ChatApp.Api.Controllers;
-
-public class ConversationsController
-{
-=======
 using System.Security.Claims;
 using ChatApp.Api.Controllers.Base;
 using ChatApp.Application.DTOs.Common;
@@ -28,6 +22,4 @@ public class ConversationsController(IMediator mediator) : AuthenticatedControll
         return Ok(response);
     }
 
->>>>>>> a957673 (initial)
-    
 }

@@ -1,10 +1,5 @@
 namespace ChatApp.Domain.Entities;
 
-<<<<<<< HEAD
-public class Group
-{
-    
-=======
 // Domain/Entities/Group.cs
 public class Group
 {
@@ -18,5 +13,4 @@ public class Group
     public DateTime? InviteCodeExpiresAt { get; set; }
     public ICollection<GroupMember> Members { get; set; } = new List<GroupMember>();
     public ICollection<Message> Messages { get; set; } = new List<Message>();
->>>>>>> a957673 (initial)
 }

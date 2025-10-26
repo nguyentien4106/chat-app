@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-namespace ChatApp.Application.Queries.Groups.GetUserGroups;
-
-public class GetUserGroupsHandler
-{
-    
-}
-=======
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Interfaces;
 using ChatApp.Application.Models;
@@ -40,4 +32,3 @@ public class GetUserGroupsHandler: IQueryHandler<GetUserGroupsQuery, AppResponse
         return AppResponse<List<GroupDto>>.Success(groups);
     }
 }
->>>>>>> a957673 (initial)

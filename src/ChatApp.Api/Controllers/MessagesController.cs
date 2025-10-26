@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-namespace ChatApp.Api.Controllers;
-
-public class MessagesController
-{
-    
-}
-=======
 using System.Security.Claims;
 using ChatApp.Api.Controllers.Base;
 using ChatApp.Application.Commands.Messages.SendMessage;
@@ -77,4 +69,3 @@ public class MessagesController(IMediator mediator) : AuthenticatedControllerBas
     }
 
 }
->>>>>>> a957673 (initial)

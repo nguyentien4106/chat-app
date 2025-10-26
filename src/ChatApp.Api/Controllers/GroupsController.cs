@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-namespace ChatApp.Api.Controllers;
 
-public class GroupsController
-{
-    
-=======
 using System.Security.Claims;
 using ChatApp.Api.Controllers.Base;
 using ChatApp.Api.Models.Requests;
@@ -113,5 +107,4 @@ public class GroupsController(IMediator mediator) : AuthenticatedControllerBase
         return Ok(response);
     }
    
->>>>>>> a957673 (initial)
 }

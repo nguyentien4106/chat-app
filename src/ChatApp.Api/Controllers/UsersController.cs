@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-namespace ChatApp.Api.Controllers;
-
-public class UsersController
-{
-=======
 using ChatApp.Api.Controllers.Base;
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Models;
@@ -51,7 +45,4 @@ public class UsersController : AuthenticatedControllerBase
 
         return Ok(response);
     }
-
->>>>>>> a957673 (initial)
-    
 }
