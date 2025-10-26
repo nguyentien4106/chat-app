@@ -1,5 +1,6 @@
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Interfaces;
+<<<<<<< HEAD
 using Microsoft.EntityFrameworkCore;
 
 namespace ChatApp.Application.Queries.Messages;
@@ -9,11 +10,27 @@ public class GetConversationMessageHandler: IQueryHandler<GetConversationMessage
     private readonly IChatAppDbContext _context;
 
     public GetConversationMessageHandler(IChatAppDbContext context)
+=======
+using ChatApp.Application.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace ChatApp.Application.Queries.Messages.GetConversationMessages;
+
+public class GetConversationMessagesHandler: IQueryHandler<GetConversationMessagesQuery, AppResponse<List<MessageDto>>>
+{
+    private readonly IChatAppDbContext _context;
+
+    public GetConversationMessagesHandler(IChatAppDbContext context)
+>>>>>>> a957673 (initial)
     {
         _context = context;
     }
 
+<<<<<<< HEAD
     public async Task<List<MessageDto>> Handle(GetConversationMessagesQuery request, CancellationToken cancellationToken)
+=======
+    public async Task<AppResponse<List<MessageDto>>> Handle(GetConversationMessagesQuery request, CancellationToken cancellationToken)
+>>>>>>> a957673 (initial)
     {
         var messages = await _context.Messages
             .Where(m => m.GroupId == null &&
@@ -35,6 +52,10 @@ public class GetConversationMessageHandler: IQueryHandler<GetConversationMessage
             })
             .ToListAsync(cancellationToken);
 
+<<<<<<< HEAD
         return messages;
+=======
+        return AppResponse<List<MessageDto>>.Success(messages);
+>>>>>>> a957673 (initial)
     }
 }
