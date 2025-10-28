@@ -20,6 +20,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
+import { JWT_CLAIMS } from "@/constants/jwtClaims";
 
 export const ChatSidebar: React.FC = () => {
   const {
@@ -47,16 +48,20 @@ export const ChatSidebar: React.FC = () => {
   const [addUserName, setAddUserName] = React.useState("");
   const [searchTerm, setSearchTerm] = React.useState("");
   const [showSearch, setShowSearch] = React.useState(false);
+  const [showCreateGroup, setShowCreateGroup] = React.useState(false);
+  const [showJoinByCode, setShowJoinByCode] = React.useState(false);
 
   const handleCreateGroupClick = () => {
     handleCreateGroup(newGroupName, newGroupDescription);
     setNewGroupName("");
     setNewGroupDescription("");
+    setShowCreateGroup(false);
   };
 
   const handleJoinByInviteClick = () => {
     handleJoinByInvite(inviteCode);
     setInviteCode("");
+    setShowJoinByCode(false);
   };
 
   const handleAddMemberClick = (groupId: string) => {
@@ -87,8 +92,8 @@ export const ChatSidebar: React.FC = () => {
         <h1 className="text-xl font-bold">Chat App</h1>
         <p className="text-sm text-gray-500">
           {user?.userName ||
-            user?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] ||
-            user?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] ||
+            user?.[JWT_CLAIMS.NAME] ||
+            user?.[JWT_CLAIMS.EMAIL] ||
             "User"}
         </p>
         <div className="flex items-center mt-2">
@@ -230,7 +235,7 @@ export const ChatSidebar: React.FC = () => {
           className="flex-1 overflow-hidden flex flex-col mt-2 mx-0 min-h-0"
         >
           <div className="px-4 py-2 space-y-2 flex-shrink-0">
-            <Dialog>
+            <Dialog open={showCreateGroup} onOpenChange={setShowCreateGroup}>
               <DialogTrigger asChild>
                 <Button className="w-full">Create Group</Button>
               </DialogTrigger>
@@ -256,7 +261,7 @@ export const ChatSidebar: React.FC = () => {
               </DialogContent>
             </Dialog>
 
-            <Dialog>
+            <Dialog open={showJoinByCode} onOpenChange={setShowJoinByCode}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full">
                   <LinkIcon className="w-4 h-4 mr-2" />

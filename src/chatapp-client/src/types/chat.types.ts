@@ -46,6 +46,24 @@ export interface Group {
   memberCount: number;
 }
 
+export interface GroupMember {
+  userId: string;
+  userName: string;
+  email: string;
+  joinedAt: Date;
+  isAdmin: boolean;
+}
+
+export interface GroupInfo {
+  id: string;
+  name: string;
+  description?: string;
+  createdById: string;
+  createdAt: Date;
+  memberCount: number;
+  members: GroupMember[];
+}
+
 export interface ActiveChat {
   id: string;
   name: string;

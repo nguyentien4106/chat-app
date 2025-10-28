@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace ChatApp.Domain.Entities;
 
-public class ApplicationUser : IdentityUser<Guid>, IEntity<Guid>
+public class ApplicationUser : IdentityUser<Guid>
 {
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
@@ -12,7 +12,7 @@ public class ApplicationUser : IdentityUser<Guid>, IEntity<Guid>
     public string? CreatedBy { get; set; }
 
     // Navigation Properties
-    public ICollection<GroupMember> GroupMemberships { get; set; } = new List<GroupMember>();
+    public ICollection<GroupMember> GroupMembers { get; set; } = [];
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     public string? UpdatedBy { get; set; }

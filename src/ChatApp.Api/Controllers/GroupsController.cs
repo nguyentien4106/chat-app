@@ -6,8 +6,11 @@ using ChatApp.Application.Commands.Groups.AddUserToGroup;
 using ChatApp.Application.Commands.Groups.CreateGroup;
 using ChatApp.Application.Commands.Groups.GenerateLink;
 using ChatApp.Application.Commands.Groups.JoinGroup;
+using ChatApp.Application.Commands.Groups.LeaveGroup;
+using ChatApp.Application.Commands.Groups.RemoveMember;
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Models;
+using ChatApp.Application.Queries.Groups.GetGroupInfo;
 using ChatApp.Application.Queries.Groups.GetUserGroups;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -89,14 +92,45 @@ public class GroupsController(IMediator mediator) : AuthenticatedControllerBase
             UserId = userId
         };
 
-        var response = await mediator.Send(command);
-        
-        if (!response.IsSuccess)
-        {
-            return BadRequest(response);
-        }
-        
-        return Ok(response);
+        return Ok(await mediator.Send(command));
     }
-   
+
+    [HttpGet("{groupId}/info")]
+    public async Task<ActionResult<AppResponse<GroupDto>>> GetGroupInfo(Guid groupId)
+    {
+        var userId = CurrentUserId;
+        var query = new GetGroupInfoQuery
+        {
+            GroupId = groupId,
+            UserId = userId
+        };
+
+        return Ok(await mediator.Send(query));
+    }
+    
+    [HttpDelete("{groupId}/members")]
+    public async Task<ActionResult<AppResponse<Unit>>> RemoveMember(Guid groupId, [FromBody] RemoveMemberRequest request)
+    {
+        var command = new RemoveMemberFromGroupCommand
+        {
+            GroupId = groupId,
+            UserId = request.UserId,
+            RemovedById = CurrentUserId
+        };
+
+        return Ok(await mediator.Send(command));
+    }
+
+    [HttpPost("{groupId}/leave")]
+    public async Task<ActionResult<AppResponse<Unit>>> LeaveGroup(Guid groupId)
+    {
+        var userId = CurrentUserId;
+        var command = new LeaveGroupCommand
+        {
+            GroupId = groupId,
+            UserId = userId
+        };
+
+        return Ok(await mediator.Send(command));
+    }
 }

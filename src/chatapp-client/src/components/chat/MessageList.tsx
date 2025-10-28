@@ -1,25 +1,11 @@
 import React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Message } from "@/types/chat.types";
 import { MessageItem } from "./MessageItem";
+import { useChatContext } from "@/contexts/ChatContext";
 
-interface ActiveChat {
-  type: "user" | "group";
-}
+export const MessageList: React.FC = () => {
+  const { activeChat, messages, currentUserId, messagesEndRef } = useChatContext();
 
-interface MessageListProps {
-  messages: Message[];
-  activeChat: ActiveChat | null;
-  currentUserId: string | undefined;
-  messagesEndRef: React.RefObject<HTMLDivElement | null>;
-}
-
-export const MessageList: React.FC<MessageListProps> = ({
-  messages,
-  activeChat,
-  currentUserId,
-  messagesEndRef,
-}) => {
   return (
     <div className="flex-1 overflow-hidden min-h-0">
       <ScrollArea className="h-full p-4">

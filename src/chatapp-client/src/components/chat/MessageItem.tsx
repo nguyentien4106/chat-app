@@ -1,12 +1,6 @@
 import React from "react";
 import { Download, Paperclip } from "lucide-react";
-import { Message } from "@/types/chat.types";
-
-enum MessageType {
-  Text = 0,
-  Image = 1,
-  File = 2,
-}
+import { Message, MessageType } from "@/types/chat.types";
 
 interface MessageItemProps {
   message: Message;

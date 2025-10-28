@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Paperclip, X } from "lucide-react";
+import { useChatContext } from "@/contexts/ChatContext";
 
 const formatFileSize = (bytes?: number): string => {
   if (!bytes) return "0 B";
@@ -10,17 +11,11 @@ const formatFileSize = (bytes?: number): string => {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 };
 
-interface FilePreviewProps {
-  file: File;
-  previewUrl: string | null;
-  onClear: () => void;
-}
+export const FilePreview: React.FC = () => {
+  const { selectedFile, previewUrl, handleClearFile } = useChatContext();
 
-export const FilePreview: React.FC<FilePreviewProps> = ({
-  file,
-  previewUrl,
-  onClear,
-}) => {
+  if (!selectedFile) return null;
+
   return (
     <div className="bg-white border-t p-4 flex-shrink-0">
       <div className="flex items-center space-x-3 bg-gray-100 p-3 rounded-lg">
@@ -36,10 +31,12 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{file.name}</p>
-          <p className="text-sm text-gray-500">{formatFileSize(file.size)}</p>
+          <p className="font-medium truncate">{selectedFile?.name}</p>
+          <p className="text-sm text-gray-500">
+            {formatFileSize(selectedFile?.size)}
+          </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={onClear}>
+        <Button variant="ghost" size="sm" onClick={handleClearFile}>
           <X className="w-4 h-4" />
         </Button>
       </div>

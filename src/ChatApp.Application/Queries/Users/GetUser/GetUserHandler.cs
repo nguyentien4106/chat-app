@@ -15,7 +15,7 @@ public class GetUserHandler(IUserRepository userRepository)
             var userDto = new UserDto
             {
                 Id = user.Id,
-                Username = user.UserName ?? "",
+                UserName = user.UserName ?? "",
                 Email = user.Email ?? ""
             };
 

@@ -20,6 +20,7 @@ export interface AuthUser {
   [JWT_CLAIMS.NAME_IDENTIFIER]: string;
   [JWT_CLAIMS.EMAIL]: string;
   [JWT_CLAIMS.NAME]: string;
+  [JWT_CLAIMS.ROLE]: string;
   userName?: string;
   roles: string[];
 }

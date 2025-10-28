@@ -59,7 +59,7 @@ interface ChatContextType {
   handleKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   handleFileSelect: (event: React.ChangeEvent<HTMLInputElement>, isImage: boolean) => void;
   handleCreateGroup: (name: string, description: string) => Promise<void>;
-  handleGenerateInvite: (groupId: string) => Promise<void>;
+  handleGenerateInvite: (groupId: string) => Promise<string>;
   handleJoinByInvite: (code: string) => Promise<void>;
   handleAddMember: (groupId: string, userName: string) => Promise<void>;
   handleStartChat: (user: UserDto) => Promise<void>;
@@ -85,6 +85,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     joinGroup,
     onReceiveMessage,
     onMemberAdded,
+    onMemberRemoved,
+    onMemberLeft,
   } = useSignalR();
   
   const {
@@ -152,12 +154,34 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       
       onMemberAdded((data) => {
+        console.log('Member added:', data);
         if (activeChat?.type === 'group' && activeChat.id === data.groupId) {
           loadGroups();
         }
       });
+
+      onMemberRemoved((data) => {
+        console.log('Member removed:', data);
+        // If current user was removed, close the chat
+        if (data.userId === currentUserId && activeChat?.type === 'group' && activeChat.id === data.groupId) {
+          setActiveChat(null);
+          toast.info('You have been removed from the group');
+        }
+        // Refresh groups list to update member count
+        loadGroups();
+      });
+
+      onMemberLeft((data) => {
+        console.log('Member left:', data);
+        // If current user left, close the chat
+        if (data.userId === currentUserId && activeChat?.type === 'group' && activeChat.id === data.groupId) {
+          setActiveChat(null);
+        }
+        // Refresh groups list to update member count
+        loadGroups();
+      });
     }
-  }, [connection, activeChat, onReceiveMessage, onMemberAdded, addMessage, loadConversations, loadGroups]);
+  }, [connection, activeChat, currentUserId, onReceiveMessage, onMemberAdded, onMemberRemoved, onMemberLeft, addMessage, loadConversations, loadGroups, setActiveChat]);
   
   // Auto-scroll to bottom
   useEffect(() => {
@@ -227,15 +251,17 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  const handleGenerateInvite = async (groupId: string): Promise<void> => {
+  const handleGenerateInvite = async (groupId: string): Promise<string> => {
     try {
       const code = await generateInviteLink(groupId);
       toast.success(`Invite code: ${code}`, {
         description: 'Share this code with others to invite them.',
         duration: 5000,
       });
+      return code;
     } catch (error) {
       toast.error('Failed to generate invite code');
+      return '';
     }
   };
   

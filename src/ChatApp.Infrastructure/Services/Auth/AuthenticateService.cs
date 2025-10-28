@@ -17,25 +17,18 @@ public class AuthenticateService(
     {
         var accessToken = await accessTokenService.GetTokenAsync(user);
         var refreshToken = await refreshTokenService.GetTokenAsync(user);
-        UserRefreshToken currentUserRefreshToken;
-        bool success;
+        var currentUserRefreshToken = await refreshTokenRepository.GetSingleAsync(rf => rf.ApplicationUserId == user.Id, cancellationToken: cancellationToken);
 
-        try {
-            currentUserRefreshToken = await refreshTokenRepository.GetSingleAsync(rf => rf.ApplicationUserId == user.Id, cancellationToken: cancellationToken);
-            currentUserRefreshToken.RefreshToken = refreshToken;
-            success = await refreshTokenRepository.UpdateAsync(currentUserRefreshToken, cancellationToken);
-        }
-        catch(NotFoundException ex){
-            var newUserRefreshToken = new UserRefreshToken
-            {
-                ApplicationUserId = user.Id,
-                RefreshToken = refreshToken
-            };
-            success = await refreshTokenRepository.AddAsync(newUserRefreshToken, cancellationToken) != null;
-        }
-        
-        return success ?
-            AppResponse<AuthenticateResponse>.Success(new AuthenticateResponse(accessToken, refreshToken)) :
-            AppResponse<AuthenticateResponse>.Error("Failed to save refresh token.");
+        var refreshTokenEntity = currentUserRefreshToken == null ? new UserRefreshToken
+        {
+            Id = Guid.NewGuid(),
+            ApplicationUserId = user.Id,
+        } : currentUserRefreshToken;
+
+        refreshTokenEntity.RefreshToken = refreshToken;
+
+        await refreshTokenRepository.AddOrUpdateAsync(refreshTokenEntity);
+
+        return AppResponse<AuthenticateResponse>.Success(new AuthenticateResponse(accessToken, refreshToken));
     }
 }

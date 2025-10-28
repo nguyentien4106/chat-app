@@ -1,21 +1,27 @@
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Interfaces;
 using ChatApp.Application.Models;
+using ChatApp.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace ChatApp.Application.Commands.Groups.CreateGroup;
 
 
-public class CreateGroupHandler : ICommandHandler<CreateGroupCommand, AppResponse<GroupDto>>
+public class CreateGroupHandler(
+    IRepository<Group> groupRepository,
+    IRepository<GroupMember> groupMemberRepository,
+    IUserRepository userRepository
+    ) : ICommandHandler<CreateGroupCommand, AppResponse<GroupDto>>
 {
-    private readonly IChatAppDbContext _context;
-
-    public CreateGroupHandler(IChatAppDbContext context)
-    {
-        _context = context;
-    }
-
     public async Task<AppResponse<GroupDto>> Handle(CreateGroupCommand request, CancellationToken cancellationToken)
     {
+        // Validate that the user exists
+        var user = await userRepository.GetByIdAsync(request.CreatedById, cancellationToken: cancellationToken);
+        if (user == null)
+        {
+            return AppResponse<GroupDto>.Fail($"User with ID {request.CreatedById} not found");
+        }
+
         var group = new Group
         {
             Id = Guid.NewGuid(),
@@ -34,9 +40,8 @@ public class CreateGroupHandler : ICommandHandler<CreateGroupCommand, AppRespons
             IsAdmin = true
         };
 
-        _context.Groups.Add(group);
-        _context.GroupMembers.Add(member);
-        await _context.SaveChangesAsync(cancellationToken);
+        await groupRepository.AddAsync(group, cancellationToken);
+        await groupMemberRepository.AddAsync(member, cancellationToken);
 
         var groupDto = new GroupDto
         {

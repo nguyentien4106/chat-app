@@ -121,8 +121,8 @@ class ApiService {
     return response.data.data;
   }
 
-  async delete<T>(url: string): Promise<T> {
-    const response = await this.client.delete<AppResponse<T>>(url);
+  async delete<T>(url: string, data?: any): Promise<T> {
+    const response = await this.client.delete<AppResponse<T>>(url, { data });
     if(response.data.isSuccess === false){
       throw new Error(response.data.errors.join(', '));
     }

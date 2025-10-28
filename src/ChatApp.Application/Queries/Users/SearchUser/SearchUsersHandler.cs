@@ -24,7 +24,7 @@ public class SearchUsersHandler(
             .Select(u => new UserDto
             {
                 Id = u.Id,
-                Username = u.UserName ?? "",
+                UserName = u.UserName ?? "",
                 Email = u.Email ?? ""
             })
             .ToList();

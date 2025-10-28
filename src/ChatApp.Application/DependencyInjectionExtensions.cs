@@ -21,8 +21,6 @@ public static class DependencyInjectionExtensions
             cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
         });
 
-        // Register Body Record Data Strategies
-        
     }
 
 }

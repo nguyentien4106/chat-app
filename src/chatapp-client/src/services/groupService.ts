@@ -1,4 +1,4 @@
-import { Group, InviteLinkResponse } from "@/types/chat.types";
+import { Group, GroupInfo, InviteLinkResponse } from "@/types/chat.types";
 import { apiService } from "./api";
 
 export const groupService = {
@@ -14,5 +14,14 @@ export const groupService = {
     apiService.post<InviteLinkResponse>(`/api/groups/${groupId}/invite`),
 
   joinByInvite: (inviteCode: string) =>
-    apiService.post(`/api/groups/join/${inviteCode}`)
+    apiService.post(`/api/groups/join/${inviteCode}`),
+
+  getGroupInfo: (groupId: string) =>
+    apiService.get<GroupInfo>(`/api/groups/${groupId}/info`),
+
+  leaveGroup: (groupId: string) =>
+    apiService.post(`/api/groups/${groupId}/leave`),
+
+  removeMember: (groupId: string, userId: string) =>
+    apiService.delete(`/api/groups/${groupId}/members`, { userId })
 };
