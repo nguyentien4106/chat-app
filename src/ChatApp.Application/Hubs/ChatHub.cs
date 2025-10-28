@@ -118,6 +118,11 @@ public class ChatHub : Hub
                 .SendAsync("UserTyping", new { UserId = userId });
         }
     }
+
+    public async Task OnNewConversation(Guid groupId)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, groupId.ToString());
+    }
 }
 
 public class SendMessageRequest

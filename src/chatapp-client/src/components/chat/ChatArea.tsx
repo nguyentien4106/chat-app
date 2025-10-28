@@ -3,49 +3,29 @@ import { ChatHeader } from "./ChatHeader";
 import { MessageList } from "./MessageList";
 import { FilePreview } from "./FilePreview";
 import { MessageInput } from "./MessageInput";
-import { Message } from "@/types/chat.types";
+import { useChatContext } from "@/contexts/ChatContext";
 
-interface ActiveChat {
-  id: string;
-  name: string;
-  type: "user" | "group";
-}
-
-interface ChatAreaProps {
-  activeChat: ActiveChat;
-  messages: Message[];
-  currentUserId: string | undefined;
-  messageInput: string;
-  isConnected: boolean;
-  isUploading: boolean;
-  selectedFile: File | null;
-  previewUrl: string | null;
-  messagesEndRef: React.RefObject<HTMLDivElement | null>;
-  onMessageChange: (value: string) => void;
-  onSendMessage: () => void;
-  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  onImageSelect: () => void;
-  onFileSelect: () => void;
-  onClearFile: () => void;
-}
-
-export const ChatArea: React.FC<ChatAreaProps> = ({
-  activeChat,
-  messages,
-  currentUserId,
-  messageInput,
-  isConnected,
-  isUploading,
-  selectedFile,
-  previewUrl,
-  messagesEndRef,
-  onMessageChange,
-  onSendMessage,
-  onKeyDown,
-  onImageSelect,
-  onFileSelect,
-  onClearFile,
-}) => {
+export const ChatArea: React.FC = () => {
+  const {
+    activeChat,
+    messages,
+    currentUserId,
+    messageInput,
+    isConnected,
+    isUploading,
+    selectedFile,
+    previewUrl,
+    messagesEndRef,
+    setMessageInput,
+    handleSendMessage,
+    handleKeyDown,
+    handleImageSelect,
+    handleFileButtonSelect,
+    handleClearFile,
+  } = useChatContext();
+  
+  if (!activeChat) return null;
+  
   return (
     <>
       <ChatHeader activeChat={activeChat} />
@@ -56,25 +36,25 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         currentUserId={currentUserId}
         messagesEndRef={messagesEndRef}
       />
-
+      
       {selectedFile && (
         <FilePreview
           file={selectedFile}
           previewUrl={previewUrl}
-          onClear={onClearFile}
+          onClear={handleClearFile}
         />
       )}
-
+      
       <MessageInput
         messageInput={messageInput}
         isConnected={isConnected}
         isUploading={isUploading}
         hasSelectedFile={!!selectedFile}
-        onMessageChange={onMessageChange}
-        onSendMessage={onSendMessage}
-        onKeyDown={onKeyDown}
-        onImageSelect={onImageSelect}
-        onFileSelect={onFileSelect}
+        onMessageChange={setMessageInput}
+        onSendMessage={handleSendMessage}
+        onKeyDown={handleKeyDown}
+        onImageSelect={handleImageSelect}
+        onFileSelect={handleFileButtonSelect}
       />
     </>
   );

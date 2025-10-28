@@ -1,8 +1,9 @@
+using ChatApp.Domain.Entities.Base;
+
 namespace ChatApp.Domain.Entities;
 
-public class GroupMember
+public class GroupMember : Entity<Guid>
 {
-    public Guid Id { get; set; }
     public Guid GroupId { get; set; }
     public Group Group { get; set; } = null!;
     public Guid UserId { get; set; }

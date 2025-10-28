@@ -19,99 +19,65 @@ import {
   Search,
   Loader2,
 } from "lucide-react";
-import { UserDto } from "@/types/chat.types";
+import { useChatContext } from "@/contexts/ChatContext";
 
-interface ActiveChat {
-  id: string;
-  name: string;
-  type: "user" | "group";
-}
-
-interface Conversation {
-  userId: string;
-  username: string;
-  lastMessage: string;
-  unreadCount: number;
-}
-
-interface Group {
-  id: string;
-  name: string;
-  memberCount: number;
-}
-
-interface ChatSidebarProps {
-  user: any;
-  isConnected: boolean;
-  activeChat: ActiveChat | null;
-  conversations: Conversation[];
-  groups: Group[];
-  onChatSelect: (chat: ActiveChat) => void;
-  onCreateGroup: (name: string, description: string) => void;
-  onJoinByInvite: (code: string) => void;
-  onAddMember: (groupId: string, userId: string) => void;
-  onGenerateInvite: (groupId: string) => void;
-  searchResults: UserDto[];
-  isSearching: boolean;
-  onSearchUsers: (term: string) => void;
-  onClearSearch: () => void;
-  onStartChat: (user: UserDto) => void;
-}
-
-export const ChatSidebar: React.FC<ChatSidebarProps> = ({
-  user,
-  isConnected,
-  activeChat,
-  conversations,
-  groups,
-  onChatSelect,
-  onCreateGroup,
-  onJoinByInvite,
-  onAddMember,
-  onGenerateInvite,
-  searchResults,
-  isSearching,
-  onSearchUsers,
-  onClearSearch,
-  onStartChat,
-}) => {
+export const ChatSidebar: React.FC = () => {
+  const {
+    user,
+    isConnected,
+    activeChat,
+    conversations,
+    groups,
+    searchResults,
+    isSearching,
+    handleChatSelect,
+    handleCreateGroup,
+    handleJoinByInvite,
+    handleAddMember,
+    handleGenerateInvite,
+    handleSearchUsers,
+    handleClearSearch,
+    handleStartChat,
+  } = useChatContext();
+  
+  // Local state for dialogs
   const [newGroupName, setNewGroupName] = React.useState("");
   const [newGroupDescription, setNewGroupDescription] = React.useState("");
   const [inviteCode, setInviteCode] = React.useState("");
-  const [addUserId, setAddUserId] = React.useState("");
+  const [addUserName, setAddUserName] = React.useState("");
   const [searchTerm, setSearchTerm] = React.useState("");
   const [showSearch, setShowSearch] = React.useState(false);
 
-  const handleCreateGroup = () => {
-    onCreateGroup(newGroupName, newGroupDescription);
+  const handleCreateGroupClick = () => {
+    handleCreateGroup(newGroupName, newGroupDescription);
     setNewGroupName("");
     setNewGroupDescription("");
   };
 
-  const handleJoinByInvite = () => {
-    onJoinByInvite(inviteCode);
+  const handleJoinByInviteClick = () => {
+    handleJoinByInvite(inviteCode);
     setInviteCode("");
   };
 
-  const handleAddMember = (groupId: string) => {
-    onAddMember(groupId, addUserId);
-    setAddUserId("");
+  const handleAddMemberClick = (groupId: string) => {
+    handleAddMember(groupId, addUserName);
+    setAddUserName("");
   };
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
     if (value.length > 2) {
-      onSearchUsers(value);
+      handleSearchUsers(value);
     } else {
-      onClearSearch();
+      handleClearSearch();
     }
   };
 
-  const handleStartChat = (user: UserDto) => {
-    onStartChat(user);
+  const handleUserClick = (user: any) => {
+    handleStartChat(user);
     setShowSearch(false);
     setSearchTerm("");
-    onClearSearch();
+    handleClearSearch();
   };
 
   return (
@@ -177,7 +143,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     {searchResults.map((user) => (
                       <div
                         key={user.id}
-                        onClick={() => handleStartChat(user)}
+                        onClick={() => handleUserClick(user)}
                         className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 cursor-pointer"
                       >
                         <Avatar>
@@ -224,7 +190,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 <div
                   key={conv.userId}
                   onClick={() =>
-                    onChatSelect({
+                    handleChatSelect({
                       id: conv.userId,
                       name: conv.username,
                       type: "user",
@@ -283,7 +249,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     value={newGroupDescription}
                     onChange={(e) => setNewGroupDescription(e.target.value)}
                   />
-                  <Button onClick={handleCreateGroup} className="w-full">
+                  <Button onClick={handleCreateGroupClick} className="w-full">
                     Create
                   </Button>
                 </div>
@@ -307,7 +273,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     value={inviteCode}
                     onChange={(e) => setInviteCode(e.target.value)}
                   />
-                  <Button onClick={handleJoinByInvite} className="w-full">
+                  <Button onClick={handleJoinByInviteClick} className="w-full">
                     Join
                   </Button>
                 </div>
@@ -323,7 +289,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 <div
                   key={group.id}
                   onClick={() =>
-                    onChatSelect({
+                    handleChatSelect({
                       id: group.id,
                       name: group.name,
                       type: "group",
@@ -366,11 +332,11 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                             </p>
                             <div className="flex space-x-2">
                               <Input
-                                placeholder="User ID"
-                                value={addUserId}
-                                onChange={(e) => setAddUserId(e.target.value)}
+                                placeholder="User Name"
+                                value={addUserName}
+                                onChange={(e) => setAddUserName(e.target.value)}
                               />
-                              <Button onClick={() => handleAddMember(group.id)}>
+                              <Button onClick={() => handleAddMemberClick(group.id)}>
                                 Add
                               </Button>
                             </div>
@@ -380,7 +346,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                               Invite Link
                             </p>
                             <Button
-                              onClick={() => onGenerateInvite(group.id)}
+                              onClick={() => handleGenerateInvite(group.id)}
                               className="w-full"
                             >
                               Generate Invite Code

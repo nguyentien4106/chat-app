@@ -58,7 +58,7 @@ public class EfRepository<TEntity>(
         }
     }
 
-    public override async Task<TEntity> GetByIdAsync(Guid id, string[]? includeProperties = null, CancellationToken cancellationToken = default)
+    public override async Task<TEntity?> GetByIdAsync(Guid id, string[]? includeProperties = null, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -69,14 +69,7 @@ public class EfRepository<TEntity>(
                 query = includeProperties.Aggregate(query, (current, includeProperty) => current.Include(includeProperty));
             }
 
-            var result = await query.FirstOrDefaultAsync(e => e.Id.Equals(id), cancellationToken);
-
-            if (result == null)
-            {
-                throw new NotFoundException(typeof(TEntity).Name, id);
-            }
-            
-            return result;
+            return await query.FirstOrDefaultAsync(e => e.Id.Equals(id), cancellationToken);
         }
         catch (Exception ex)
         {
@@ -87,7 +80,7 @@ public class EfRepository<TEntity>(
     }
 
 
-    public override async Task<TEntity> GetSingleAsync(Expression<Func<TEntity, bool>> filter, string[]? includeProperties = null, CancellationToken cancellationToken = default)
+    public override async Task<TEntity?> GetSingleAsync(Expression<Func<TEntity, bool>> filter, string[]? includeProperties = null, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -104,7 +97,6 @@ public class EfRepository<TEntity>(
             {
                 logger.LogWarning("Entity of type {EntityType} with filter {Filter} not found", 
                     typeof(TEntity).Name, filter);
-                throw new NotFoundException(typeof(TEntity).Name, filter);
             }
 
             return result;
@@ -137,8 +129,9 @@ public class EfRepository<TEntity>(
             }
             else
             {
-                logger.LogWarning("Insert operation for entity of type {EntityType} with ID: {Id} returned false",
-                    typeof(TEntity).Name, entity.Id);
+                var msg = $"Insert operation for entity of type {typeof(TEntity).Name} with ID: {entity.Id} returned false";
+                logger.LogWarning(msg);
+                throw new Exception(msg);
             }
 
             return entity;
@@ -221,8 +214,9 @@ public class EfRepository<TEntity>(
             }
             else
             {
-                logger.LogWarning("Update operation for entity of type {EntityType} with ID: {Id} returned false", 
-                    typeof(TEntity).Name, entity.Id);
+                var msg = $"Update operation for entity of type {typeof(TEntity).Name} with ID: {entity.Id} returned false";
+                logger.LogWarning(msg);
+                throw new Exception(msg);
             }
             
             return result;
@@ -256,8 +250,9 @@ public class EfRepository<TEntity>(
             }
             else
             {
-                logger.LogWarning("Delete operation for entity of type {EntityType} with ID: {Id} returned false", 
-                    typeof(TEntity).Name, entity.Id);
+                var msg = $"Delete operation for entity of type {typeof(TEntity).Name} with ID: {entity.Id} returned false";
+                logger.LogWarning(msg);
+                throw new Exception(msg);
             }
             
             return result;
@@ -277,34 +272,36 @@ public class EfRepository<TEntity>(
             var entity = await dbSet.FirstOrDefaultAsync(e => e.Id.Equals(id), cancellationToken);
             if (entity == null)
             {
-                logger.LogWarning("Entity of type {EntityType} with ID {Id} not found for deletion", 
+                logger.LogWarning("Entity of type {EntityType} with ID {Id} not found for deletion",
                     typeof(TEntity).Name, id);
                 throw new NotFoundException(typeof(TEntity).Name, id);
             }
 
             dbSet.Remove(entity);
             var result = await context.SaveChangesAsync(cancellationToken) > 0;
-            
+
             if (result)
             {
-                logger.LogInformation("Successfully deleted entity of type {EntityType} with ID: {Id}", 
+                logger.LogInformation("Successfully deleted entity of type {EntityType} with ID: {Id}",
                     typeof(TEntity).Name, id);
             }
             else
             {
-                logger.LogWarning("Delete operation for entity of type {EntityType} with ID: {Id} returned false", 
-                    typeof(TEntity).Name, id);
+                var msg = $"Delete operation for entity of type {typeof(TEntity).Name} with ID: {id} returned false";
+                logger.LogWarning(msg);
+                throw new Exception(msg);
             }
-            
+
             return result;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error deleting entity of type {EntityType} by ID: {Id}", 
+            logger.LogError(ex, "Error deleting entity of type {EntityType} by ID: {Id}",
                 typeof(TEntity).Name, id);
             throw;
         }
     }
+    
     public override async Task<bool> ExistsAsync(Guid id)
     {
         return await dbSet.FindAsync(id) != null;

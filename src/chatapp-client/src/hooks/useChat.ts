@@ -17,7 +17,7 @@ interface UseChatReturn {
   createGroup: (name: string, description?: string) => Promise<void>;
   generateInviteLink: (groupId: string) => Promise<string>;
   joinByInvite: (inviteCode: string) => Promise<void>;
-  addMemberToGroup: (groupId: string, userId: string) => Promise<void>;
+  addMemberToGroup: (groupId: string, userName: string) => Promise<void>;
 }
 
 export const useChat = (): UseChatReturn => {
@@ -68,7 +68,7 @@ export const useChat = (): UseChatReturn => {
 
   const createGroup = useCallback(async (name: string, description?: string) => {
     try {
-      await groupService.createGroup({ name, description });
+      const newGroup = await groupService.createGroup({ name, description });
       await loadGroups();
     } catch (error) {
       console.error('Error creating group:', error);
@@ -96,9 +96,9 @@ export const useChat = (): UseChatReturn => {
     }
   }, [loadGroups]);
 
-  const addMemberToGroup = useCallback(async (groupId: string, userId: string) => {
+  const addMemberToGroup = useCallback(async (groupId: string, userName: string) => {
     try {
-      await groupService.addMember(groupId, userId);
+      await groupService.addMember(groupId, userName);
     } catch (error) {
       console.error('Error adding member:', error);
       throw error;

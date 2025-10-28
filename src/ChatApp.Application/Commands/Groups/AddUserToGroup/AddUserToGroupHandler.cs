@@ -12,11 +12,13 @@ public class AddMemberToGroupHandler : ICommandHandler<AddMemberToGroupCommand, 
 {
     private readonly IChatAppDbContext _context;
     private readonly IHubContext<ChatHub> _hubContext;
+    private readonly IUserRepository _userRepository;
 
-    public AddMemberToGroupHandler(IChatAppDbContext context, IHubContext<ChatHub> hubContext)
+    public AddMemberToGroupHandler(IChatAppDbContext context, IHubContext<ChatHub> hubContext, IUserRepository userRepository)
     {
         _context = context;
         _hubContext = hubContext;
+        _userRepository = userRepository;
     }
 
     public async Task<AppResponse<Unit>> Handle(AddMemberToGroupCommand request, CancellationToken cancellationToken)
@@ -27,12 +29,18 @@ public class AddMemberToGroupHandler : ICommandHandler<AddMemberToGroupCommand, 
 
         var addedBy = await _context.GroupMembers
             .FirstOrDefaultAsync(gm => gm.GroupId == request.GroupId && gm.UserId == request.AddedById, cancellationToken);
-        
+
         if (addedBy == null || !addedBy.IsAdmin)
             return AppResponse<Unit>.Fail("Only admins can add members");
 
+        var newMember = await _userRepository.GetUserByUserNameAsync(request.UserName, cancellationToken: cancellationToken);
+        if (newMember == null)
+        {
+            return AppResponse<Unit>.Fail("User not found");
+        }
+
         var existingMember = await _context.GroupMembers
-            .FirstOrDefaultAsync(gm => gm.GroupId == request.GroupId && gm.UserId == request.UserId, cancellationToken);
+            .FirstOrDefaultAsync(gm => gm.GroupId == request.GroupId && gm.UserId == newMember.Id, cancellationToken);
 
         if (existingMember != null)
             return AppResponse<Unit>.Fail("User is already a member");
@@ -41,7 +49,7 @@ public class AddMemberToGroupHandler : ICommandHandler<AddMemberToGroupCommand, 
         {
             Id = Guid.NewGuid(),
             GroupId = request.GroupId,
-            UserId = request.UserId,
+            UserId = newMember.Id,
             JoinedAt = DateTime.UtcNow,
             IsAdmin = false
         };
@@ -50,7 +58,7 @@ public class AddMemberToGroupHandler : ICommandHandler<AddMemberToGroupCommand, 
         await _context.SaveChangesAsync(cancellationToken);
 
         await _hubContext.Clients.Group(request.GroupId.ToString())
-            .SendAsync("MemberAdded", new { GroupId = request.GroupId, UserId = request.UserId }, cancellationToken);
+            .SendAsync("MemberAdded", new { GroupId = request.GroupId, UserId = newMember.Id, NewMemberName = newMember.UserName }, cancellationToken);
 
         return AppResponse<Unit>.Success(Unit.Value);
     }

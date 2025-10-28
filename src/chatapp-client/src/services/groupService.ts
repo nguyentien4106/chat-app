@@ -5,10 +5,10 @@ export const groupService = {
   getUserGroups: () => apiService.get<Group[]>('/api/groups'),
   
   createGroup: (data: { name: string; description?: string }) =>
-    apiService.post('/api/groups', data),
+    apiService.post<Group>('/api/groups', data),
 
-  addMember: (groupId: string, userId: string) =>
-    apiService.post(`/api/groups/${groupId}/members`, { userId }),
+  addMember: (groupId: string, userName: string) =>
+    apiService.post(`/api/groups/${groupId}/members`, { userName }),
 
   generateInviteLink: (groupId: string) =>
     apiService.post<InviteLinkResponse>(`/api/groups/${groupId}/invite`),

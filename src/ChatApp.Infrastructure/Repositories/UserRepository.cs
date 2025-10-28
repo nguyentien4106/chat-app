@@ -82,4 +82,25 @@ public class UserRepository(
             throw;
         }
     }
+
+    public async Task<ApplicationUser?> GetUserByUserNameAsync(string userName, string[]? includeProperties = null, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            IQueryable<ApplicationUser> query = context.Users;
+
+            if (includeProperties != null)
+            {
+                query = includeProperties.Aggregate(query, (current, includeProperty) => current.Include(includeProperty));
+            }
+
+            return await query.SingleOrDefaultAsync(e => e.UserName.Equals(userName), cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error retrieving entity of type {EntityType} with UserName: {UserName}", 
+                typeof(ApplicationUser).Name, userName);
+            throw;
+        }
+    }
 }

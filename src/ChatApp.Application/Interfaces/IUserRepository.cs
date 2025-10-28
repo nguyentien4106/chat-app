@@ -16,4 +16,10 @@ public interface IUserRepository
         string[]? includeProperties = null,
         CancellationToken cancellationToken = default
     );
+
+    Task<ApplicationUser?> GetUserByUserNameAsync(
+        string userName,
+        string[]? includeProperties = null,
+        CancellationToken cancellationToken = default
+    );
 }

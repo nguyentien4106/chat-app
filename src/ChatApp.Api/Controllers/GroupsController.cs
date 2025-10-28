@@ -48,22 +48,14 @@ public class GroupsController(IMediator mediator) : AuthenticatedControllerBase
     [HttpPost("{groupId}/members")]
     public async Task<ActionResult<AppResponse<Unit>>> AddMember(Guid groupId, [FromBody] AddMemberRequest request)
     {
-        var userId = CurrentUserId;
         var command = new AddMemberToGroupCommand
         {
             GroupId = groupId,
-            UserId = request.UserId,
-            AddedById = userId
+            UserName = request.UserName,
+            AddedById = CurrentUserId
         };
 
-        var response = await mediator.Send(command);
-        
-        if (!response.IsSuccess)
-        {
-            return BadRequest(response);
-        }
-        
-        return Ok(response);
+        return Ok(await mediator.Send(command));
     }
 
     [HttpPost("{groupId}/invite")]

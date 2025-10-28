@@ -22,4 +22,11 @@ public class ConversationsController(IMediator mediator) : AuthenticatedControll
         return Ok(response);
     }
 
+    // [HttpPost]
+    // public async Task<ActionResult<AppResponse<ConversationDto>>> StartConversation([FromBody] StartConversationCommand command)
+    // {
+    //     command.UserId = CurrentUserId;
+    //     var response = await mediator.Send(command);
+    //     return Ok(response);
+    // }
 }

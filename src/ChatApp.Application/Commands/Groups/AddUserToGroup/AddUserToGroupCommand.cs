@@ -7,6 +7,6 @@ namespace ChatApp.Application.Commands.Groups.AddUserToGroup;
 public class AddMemberToGroupCommand : ICommand<AppResponse<Unit>>
 {
     public Guid GroupId { get; set; }
-    public Guid UserId { get; set; }
+    public string UserName { get; set; }
     public Guid AddedById { get; set; }
 }

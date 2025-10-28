@@ -6,17 +6,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ChatApp.Application.Queries.Groups.GetUserConversations;
 
-public class GetUserConversationsHandler: IRequestHandler<GetUserConversationsQuery, AppResponse<List<ConversationDto>>>
+public class GetUserConversationsHandler(
+    IRepository<Conversation> conversationRepository,
+    IChatAppDbContext _context
+) : IRequestHandler<GetUserConversationsQuery, AppResponse<List<ConversationDto>>>
 {
-    private readonly IChatAppDbContext _context;
-
-    public GetUserConversationsHandler(IChatAppDbContext context)
-    {
-        _context = context;
-    }
 
     public async Task<AppResponse<List<ConversationDto>>> Handle(GetUserConversationsQuery request, CancellationToken cancellationToken)
     {
+
         var conversations = await _context.Messages
             .Where(m => m.GroupId == null && (m.SenderId == request.UserId || m.ReceiverId == request.UserId))
             .GroupBy(m => m.SenderId == request.UserId ? m.ReceiverId : m.SenderId)

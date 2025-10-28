@@ -11,13 +11,13 @@ public interface IRepository<TEntity>
             CancellationToken cancellationToken = default
     );
 
-    Task<TEntity> GetByIdAsync(
+    Task<TEntity?> GetByIdAsync(
         Guid id,
         string[]? includeProperties = null,
         CancellationToken cancellationToken = default
     );
 
-    Task<TEntity> GetSingleAsync(
+    Task<TEntity?> GetSingleAsync(
         Expression<Func<TEntity, bool>> filter,
         string[]? includeProperties = null,
         CancellationToken cancellationToken = default
