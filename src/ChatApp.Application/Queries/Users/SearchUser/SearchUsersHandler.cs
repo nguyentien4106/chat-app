@@ -1,35 +1,34 @@
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Interfaces;
 using ChatApp.Application.Models;
-using Microsoft.EntityFrameworkCore;
+using ChatApp.Domain.Repositories;
+using Microsoft.AspNetCore.Identity;
 
 namespace ChatApp.Application.Queries.Users.SearchUser;
 
-public class SearchUsersHandler: IQueryHandler<SearchUsersQuery, AppResponse<List<UserDto>>>
+public class SearchUsersHandler(
+    IUserRepository userRepository
+    )
+    : IQueryHandler<SearchUsersQuery, AppResponse<List<UserDto>>>
 {
-    private readonly IChatAppDbContext _context;
-
-    public SearchUsersHandler(IChatAppDbContext context)
-    {
-        _context = context;
-    }
-
     public async Task<AppResponse<List<UserDto>>> Handle(SearchUsersQuery request, CancellationToken cancellationToken)
     {
+        var users = await userRepository.GetAllAsync(
+            filter: u => u.Id != request.CurrentUserId && 
+                        ((u.UserName != null && u.UserName.Contains(request.SearchTerm)) || 
+                         (u.Email != null && u.Email.Contains(request.SearchTerm))),
+            cancellationToken: cancellationToken);
         
-        var users = await _context.Users
-            .Where(u => u.Id != request.CurrentUserId && 
-                        (u.UserName.Contains(request.SearchTerm) || 
-                         u.Email.Contains(request.SearchTerm)))
+        var userDtos = users
+            .Take(20)
             .Select(u => new UserDto
             {
                 Id = u.Id,
-                Username = u.UserName,
-                Email = u.Email
+                Username = u.UserName ?? "",
+                Email = u.Email ?? ""
             })
-            .Take(20)
-            .ToListAsync(cancellationToken);
+            .ToList();
 
-        return AppResponse<List<UserDto>>.Success(users);
+        return AppResponse<List<UserDto>>.Success(userDtos);
     }
 }

@@ -1,8 +1,9 @@
 ﻿using System.Linq.Expressions;
+using ChatApp.Domain.Entities.Base;
 
 namespace ChatApp.Domain.Repositories;
 
-public abstract class Repository<TEntity> : IRepository<TEntity>
+public abstract class Repository<TEntity> : IRepository<TEntity> where TEntity : IEntity<Guid>
 {
     public abstract Task<IEnumerable<TEntity>> GetAllAsync(
         Expression<Func<TEntity, bool>>? filter = null,

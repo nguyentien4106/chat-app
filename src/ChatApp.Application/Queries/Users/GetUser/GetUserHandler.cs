@@ -1,36 +1,29 @@
 using ChatApp.Application.DTOs.Common;
-using ChatApp.Application.Interfaces;
-using ChatApp.Application.Models;
-using Microsoft.EntityFrameworkCore;
+using ChatApp.Domain.Exceptions;
 
 namespace ChatApp.Application.Queries.Users.GetUser;
 
-public class GetUserHandler : IQueryHandler<GetUserQuery, AppResponse<UserDto>>
+public class GetUserHandler(IUserRepository userRepository)
+    : IQueryHandler<GetUserQuery, AppResponse<UserDto>>
 {
-    private readonly IChatAppDbContext _context;
-
-    public GetUserHandler(IChatAppDbContext context)
-    {
-        _context = context;
-    }
-
     public async Task<AppResponse<UserDto>> Handle(GetUserQuery request, CancellationToken cancellationToken)
     {
-        var user = await _context.Users
-            .Where(u => u.Id == request.UserId)
-            .Select(u => new UserDto
-            {
-                Id = u.Id,
-                Username = u.UserName,
-                Email = u.Email
-            })
-            .FirstOrDefaultAsync(cancellationToken);
+        try
+        {
+            var user = await userRepository.GetByIdAsync(request.UserId, cancellationToken: cancellationToken);
 
-        if (user == null)
+            var userDto = new UserDto
+            {
+                Id = user.Id,
+                Username = user.UserName ?? "",
+                Email = user.Email ?? ""
+            };
+
+            return AppResponse<UserDto>.Success(userDto);
+        }
+        catch (NotFoundException)
         {
             return AppResponse<UserDto>.Fail("User not found");
         }
-
-        return AppResponse<UserDto>.Success(user);
     }
 }

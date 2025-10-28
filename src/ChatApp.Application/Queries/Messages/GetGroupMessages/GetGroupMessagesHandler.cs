@@ -1,24 +1,22 @@
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Interfaces;
 using ChatApp.Application.Models;
-using Microsoft.EntityFrameworkCore;
+using ChatApp.Domain.Repositories;
 
 namespace ChatApp.Application.Queries.Messages.GetGroupMessages;
 
-public class GetGroupMessagesHandler: IQueryHandler<GetGroupMessagesQuery, AppResponse<List<MessageDto>>>
+public class GetGroupMessagesHandler(IRepository<Message> messageRepository)
+    : IQueryHandler<GetGroupMessagesQuery, AppResponse<List<MessageDto>>>
 {
-    private readonly IChatAppDbContext _context;
-
-    public GetGroupMessagesHandler(IChatAppDbContext context)
-    {
-        _context = context;
-    }
-
     public async Task<AppResponse<List<MessageDto>>> Handle(GetGroupMessagesQuery request, CancellationToken cancellationToken)
     {
-        var messages = await _context.Messages
-            .Where(m => m.GroupId == request.GroupId)
-            .OrderByDescending(m => m.CreatedAt)
+        var messages = await messageRepository.GetAllAsync(
+            filter: m => m.GroupId == request.GroupId,
+            orderBy: query => query.OrderByDescending(m => m.CreatedAt),
+            includeProperties: ["Sender"],
+            cancellationToken: cancellationToken);
+
+        var messageDtos = messages
             .Skip(request.Skip)
             .Take(request.Take)
             .Select(m => new MessageDto
@@ -31,8 +29,8 @@ public class GetGroupMessagesHandler: IQueryHandler<GetGroupMessagesQuery, AppRe
                 CreatedAt = m.CreatedAt,
                 IsRead = m.IsRead
             })
-            .ToListAsync(cancellationToken);
+            .ToList();
 
-        return AppResponse<List<MessageDto>>.Success(messages);
+        return AppResponse<List<MessageDto>>.Success(messageDtos);
     }
 }

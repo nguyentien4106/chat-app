@@ -127,46 +127,45 @@ public class ChatAppDbInitializer(
     
     private async Task SeedNormalUsersAsync()
     {
-        var normalUsers = new[]
+        var normalUsers = new List<ApplicationUser>();
+        var userNumber = 10;
+        for (int i = 1; i <= userNumber; i++)
         {
-            new { Email = "user1@gmail.com", FirstName = "John", LastName = "Doe" },
-            new { Email = "user2@gmail.com", FirstName = "Jane", LastName = "Smith" }
-        };
-
-        foreach (var userInfo in normalUsers)
-        {
-            if (await userManager.FindByEmailAsync(userInfo.Email) != null)
-            {
-                logger.LogInformation("User {Email} already exists.", userInfo.Email);
-                continue;
-            }
-
-            var user = new ApplicationUser
+            normalUsers.Add(new ApplicationUser
             {
                 Id = Guid.NewGuid(),
-                UserName = userInfo.Email,
-                Email = userInfo.Email,
-                FirstName = userInfo.FirstName,
-                LastName = userInfo.LastName,
+                UserName = $"user{i}@gmail.com",
+                Email = $"user{i}@gmail.com",
+                FirstName = $"User {i}",
+                LastName = "System",
                 EmailConfirmed = true,
-                PhoneNumberConfirmed = false,
-                TwoFactorEnabled = false,
-                LockoutEnabled = false,
+                PhoneNumberConfirmed = true,
+                TwoFactorEnabled = true,
+                LockoutEnabled = true,
                 AccessFailedCount = 0,
                 Created = DateTime.UtcNow,
                 CreatedBy = "System"
-            };
+            });
+        }
+
+        foreach (var user in normalUsers)
+        {
+            if (await userManager.FindByEmailAsync(user.Email) != null)
+            {
+                logger.LogInformation("User {Email} already exists.", user.Email);
+                continue;
+            }
 
             var result = await userManager.CreateAsync(user, "Ti100600@");
             
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(user, nameof(Roles.User));
-                logger.LogInformation("Created user: {Email}", userInfo.Email);
+                logger.LogInformation("Created user: {Email}", user.Email);
             }
             else
             {
-                logger.LogError("Failed to create user {Email}: {Errors}", userInfo.Email, string.Join(", ", result.Errors.Select(e => e.Description)));
+                logger.LogError("Failed to create user {Email}: {Errors}", user.Email, string.Join(", ", result.Errors.Select(e => e.Description)));
             }
         }
     }

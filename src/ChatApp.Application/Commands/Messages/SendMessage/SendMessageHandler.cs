@@ -1,25 +1,30 @@
+using System.Text.Json;
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Hubs;
 using ChatApp.Application.Interfaces;
 using ChatApp.Application.Models;
+using ChatApp.Domain.Repositories;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 
 namespace ChatApp.Application.Commands.Messages.SendMessage;
 
-public class SendMessageHandler(IChatAppDbContext context, IHubContext<ChatHub> hubContext)
+public class SendMessageHandler(
+    IRepository<Message> messageRepository,
+    IHubContext<ChatHub> hubContext,
+    ILogger<SendMessageHandler> logger)
     : ICommandHandler<SendMessageCommand, AppResponse<MessageDto>>
 {
     public async Task<AppResponse<MessageDto>> Handle(SendMessageCommand request, CancellationToken cancellationToken)
     {
         var message = request.Adapt<Message>();
-        context.Messages.Add(message);
-        await context.SaveChangesAsync(cancellationToken);
+        await messageRepository.AddAsync(message, cancellationToken);
 
         // Load sender info
-        var sender = await context.Users.FindAsync(message.SenderId, cancellationToken);
+        logger.LogInformation("Loading sender info for user ID: {UserId}", JsonSerializer.Serialize(message));
 
         var messageDto = message.Adapt<MessageDto>();
-        messageDto.SenderUsername = sender?.UserName ?? "";
+        messageDto.SenderUsername = message.Sender?.UserName ?? "";
 
         // Send via SignalR
         if (request.GroupId.HasValue)

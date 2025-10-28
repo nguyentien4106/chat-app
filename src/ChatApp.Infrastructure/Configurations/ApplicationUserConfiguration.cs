@@ -16,5 +16,18 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
             .IsRequired()
             .HasMaxLength(50);
         
+        // Create indexes for search optimization
+        builder.HasIndex(u => u.UserName);
+        builder.HasIndex(u => u.Email);
+        
+        // For PostgreSQL, you can add GIN index for full-text search
+        // This requires the pg_trgm extension
+        builder.HasIndex(u => u.UserName)
+            .HasMethod("gin")
+            .HasOperators("gin_trgm_ops");
+        
+        builder.HasIndex(u => u.Email)
+            .HasMethod("gin")
+            .HasOperators("gin_trgm_ops");
     }
 }

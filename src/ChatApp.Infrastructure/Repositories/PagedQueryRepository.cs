@@ -14,8 +14,6 @@ public class PagedQueryRepository<TEntity>(
     ILogger<EfRepository<TEntity>> logger
     ) : EfRepository<TEntity>(context, logger), IRepositoryPagedQuery<TEntity> where TEntity : Entity<Guid>
 {
-    private readonly DbSet<TEntity> dbSet = context.Set<TEntity>();
-
     public async Task<PagedResult<TEntity>> GetPagedResultAsync(
         PaginationRequest request,
         Expression<Func<TEntity, bool>>? filter = null,
