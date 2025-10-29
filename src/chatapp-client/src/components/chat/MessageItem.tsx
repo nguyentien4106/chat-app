@@ -21,6 +21,17 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   isOwn,
   showSender = false,
 }) => {
+  // Notification messages - centered and styled differently
+  if (message.messageType === MessageType.Notification) {
+    return (
+      <div className="flex justify-center items-center my-2 w-full">
+        <div className="text-xs text-gray-500 text-center px-3 py-1">
+          {message.content}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
       <div

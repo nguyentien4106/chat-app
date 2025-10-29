@@ -49,7 +49,8 @@ public class CreateGroupHandler(
             Name = group.Name,
             Description = group.Description,
             CreatedById = group.CreatedById,
-            CreatedAt = group.CreatedAt
+            CreatedAt = group.CreatedAt,
+            MemberCount = group.Members.Count
         };
 
         return AppResponse<GroupDto>.Success(groupDto);

@@ -1,10 +1,13 @@
+using ChatApp.Domain.Enums;
 using MediatR;
 
 namespace ChatApp.Application.Commands.Groups.JoinGroup;
 
 public class JoinGroupHandler(
     IRepository<Group> groupRepository,
-    IRepository<GroupMember> groupMemberRepository
+    IRepository<GroupMember> groupMemberRepository,
+    IRepository<Message> messageRepository,
+    IUserRepository userRepository
 ) : ICommandHandler<JoinGroupByInviteCommand, AppResponse<Unit>>
 {
 
@@ -26,6 +29,10 @@ public class JoinGroupHandler(
         if (existingMember != null)
             return AppResponse<Unit>.Fail("User is already a member");
 
+        var user = await userRepository.GetByIdAsync(request.UserId, cancellationToken: cancellationToken);
+        if (user == null)
+            return AppResponse<Unit>.Fail("User not found");
+
         var member = new GroupMember
         {
             Id = Guid.NewGuid(),
@@ -36,6 +43,20 @@ public class JoinGroupHandler(
         };
 
         await groupMemberRepository.AddAsync(member, cancellationToken: cancellationToken);
+
+        // Create notification message
+        var notificationMessage = new Message
+        {
+            Id = Guid.NewGuid(),
+            Content = $"{user.UserName} joined the group",
+            MessageType = MessageTypes.Notification,
+            SenderId = request.UserId,
+            GroupId = group.Id,
+            CreatedAt = DateTime.UtcNow,
+            IsRead = false
+        };
+
+        await messageRepository.AddAsync(notificationMessage, cancellationToken);
 
         return AppResponse<Unit>.Success(Unit.Value);
     }

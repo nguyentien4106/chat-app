@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as signalR from '@microsoft/signalr';
-import type { Message, SendMessageRequest } from '@/types/chat.types';
+import type { Group, Message, SendMessageRequest } from '@/types/chat.types';
 import Cookies from 'js-cookie';
 import { AppResponse } from '@/types';
 
@@ -13,7 +13,7 @@ interface UseSignalRReturn {
   joinGroup: (groupId: string) => Promise<void>;
   leaveGroup: (groupId: string) => Promise<void>;
   onReceiveMessage: (callback: (message: Message) => void) => void;
-  onMemberAdded: (callback: (data: { groupId: string; userId: string }) => void) => void;
+  onMemberAdded: (callback: (data: { groupId: string; userId: string; group: Group; message: Message }) => void) => void;
   onMemberRemoved: (callback: (data: { groupId: string; userId: string }) => void) => void;
   onMemberLeft: (callback: (data: { groupId: string; userId: string }) => void) => void;
 }
@@ -86,7 +86,7 @@ export const useSignalR = (): UseSignalRReturn => {
         return result.data;
       }
 
-      return undefined;
+      throw new Error(result.errors.join(', '));
     }
   }, [connection, isConnected]);
 
@@ -108,7 +108,7 @@ export const useSignalR = (): UseSignalRReturn => {
     }
   }, [connection]);
 
-  const onMemberAdded = useCallback((callback: (data: { groupId: string; userId: string }) => void) => {
+  const onMemberAdded = useCallback((callback: (data: { groupId: string; userId: string, group: Group, message: Message }) => void) => {
     if (connection) {
       connection.on('MemberAdded', callback);
     }

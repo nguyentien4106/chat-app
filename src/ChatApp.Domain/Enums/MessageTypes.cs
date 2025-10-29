@@ -4,5 +4,6 @@ public enum MessageTypes
 {
     Text,
     Image,
-    File
+    File,
+    Notification
 }

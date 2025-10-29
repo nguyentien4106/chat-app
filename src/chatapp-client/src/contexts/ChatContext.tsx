@@ -6,6 +6,7 @@ import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUserSearch } from '@/hooks/useUserSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { SendMessageRequest, UserDto, Message } from '@/types/chat.types';
+import { da } from 'date-fns/locale';
 
 // Types
 export enum MessageType {
@@ -68,6 +69,8 @@ interface ChatContextType {
   handleClearFile: () => void;
   handleSearchUsers: (query: string) => void;
   handleClearSearch: () => void;
+
+  // Events
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -101,6 +104,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     generateInviteLink,
     joinByInvite,
     addMemberToGroup,
+    onGroupMemberEvent,
+    onGroupEvent,
+    onMessagesEvent
   } = useChat();
   
   const {
@@ -136,12 +142,19 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [isConnected, loadConversations, loadGroups]);
   
+
+  const currentUserOpeningGroup = (groupId: string, userId: string): boolean => {
+    return isCurrentUser(userId) && activeChat?.type === 'group' && activeChat.id === groupId;
+  }
+
+  const isCurrentUser = (userId: string): boolean => {
+    return userId === currentUserId;
+  }
+
   // SignalR message listener
   useEffect(() => {
     if (connection) {
       onReceiveMessage((message) => {
-        console.log('Message received:', message);
-        
         if (
           activeChat &&
           ((activeChat.type === 'user' &&
@@ -154,31 +167,45 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       
       onMemberAdded((data) => {
-        console.log('Member added:', data);
+        console.log('Member added to group:', data);
+        onGroupMemberEvent({ groupId: data.groupId, event: 'memberAdded' });
+
         if (activeChat?.type === 'group' && activeChat.id === data.groupId) {
-          loadGroups();
+          //loadMessages(activeChat.id, 'group');
+          onMessagesEvent(data.message);
+        }
+
+        if (isCurrentUser(data.userId)) {
+          onGroupEvent({ groupId: data.groupId, event: 'createdGroup', group: data.group });
+          toast.success(`You are added to group ${data.group.name}`);
         }
       });
 
       onMemberRemoved((data) => {
-        console.log('Member removed:', data);
-        // If current user was removed, close the chat
-        if (data.userId === currentUserId && activeChat?.type === 'group' && activeChat.id === data.groupId) {
+        onGroupMemberEvent({ groupId: data.groupId, event: 'memberRemoved' });
+
+        if(isCurrentUser(data.userId)) {
+          onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
+        }
+
+        if (currentUserOpeningGroup(data.groupId, data.userId)) {
           setActiveChat(null);
           toast.info('You have been removed from the group');
         }
+        else if (activeChat?.type === 'group' && activeChat.id === data.groupId) {
+          loadMessages(activeChat.id, 'group');
+        }
+
         // Refresh groups list to update member count
-        loadGroups();
       });
 
       onMemberLeft((data) => {
-        console.log('Member left:', data);
-        // If current user left, close the chat
-        if (data.userId === currentUserId && activeChat?.type === 'group' && activeChat.id === data.groupId) {
+        if (currentUserOpeningGroup(data.groupId, data.userId)) {
           setActiveChat(null);
+          onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
         }
+
         // Refresh groups list to update member count
-        loadGroups();
       });
     }
   }, [connection, activeChat, currentUserId, onReceiveMessage, onMemberAdded, onMemberRemoved, onMemberLeft, addMessage, loadConversations, loadGroups, setActiveChat]);
@@ -234,9 +261,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       addMessage(newMessage!);
       setMessageInput('');
       clearSelection();
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast.error('Failed to send message');
+    } catch (error: any) {
+      toast.error('Failed to send message. ' + error.message);
     }
   };
   
@@ -247,7 +273,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await createGroup(name, description);
       toast.success('Group created successfully!');
     } catch (error) {
-      toast.error('Failed to create group');
+      toast.error('Failed to create group. ' + (error as Error).message);
     }
   };
   
@@ -259,8 +285,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         duration: 5000,
       });
       return code;
-    } catch (error) {
-      toast.error('Failed to generate invite code');
+    } catch (error: any) {
+      toast.error('Failed to generate invite code. ' + error.message);
       return '';
     }
   };
@@ -271,8 +297,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       await joinByInvite(code);
       toast.success('Successfully joined group!');
-    } catch (error) {
-      toast.error('Invalid or expired invite code');
+    } catch (error: any) {
+      toast.error('Invalid or expired invite code.' + error.message);
     }
   };
   
@@ -282,8 +308,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       await addMemberToGroup(groupId, userName);
       toast.success('Member added successfully!');
-    } catch (error) {
-      toast.error('Failed to add member. Check permissions or user ID.');
+    } catch (error: any) {
+      toast.error('Failed to add member.' + error.message);
     }
   };
   

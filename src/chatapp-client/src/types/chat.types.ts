@@ -10,7 +10,8 @@ export interface User {
 export enum MessageType {
   Text = 0,
   Image = 1,
-  File = 2
+  File = 2,
+  Notification = 3
 }
 
 export interface Message {

@@ -18,6 +18,11 @@ interface UseChatReturn {
   generateInviteLink: (groupId: string) => Promise<string>;
   joinByInvite: (inviteCode: string) => Promise<void>;
   addMemberToGroup: (groupId: string, userName: string) => Promise<void>;
+
+  //Events
+  onGroupMemberEvent: (data: { groupId: string; event: 'memberAdded' | 'memberRemoved' }) => void;
+  onGroupEvent: (data: { groupId: string; event: 'createdGroup' | 'removedGroup', group: Group | null }) => void;
+  onMessagesEvent: (message: Message) => void;
 }
 
 export const useChat = (): UseChatReturn => {
@@ -69,7 +74,7 @@ export const useChat = (): UseChatReturn => {
   const createGroup = useCallback(async (name: string, description?: string) => {
     try {
       const newGroup = await groupService.createGroup({ name, description });
-      await loadGroups();
+      onGroupEvent({ groupId: newGroup.id, event: 'createdGroup', group: newGroup });
     } catch (error) {
       console.error('Error creating group:', error);
       throw error;
@@ -105,6 +110,38 @@ export const useChat = (): UseChatReturn => {
     }
   }, []);
 
+  const onGroupEvent = useCallback(({ groupId, event, group }: { groupId: string; event: 'createdGroup' | 'removedGroup', group: Group | null }) => {
+    setGroups(prev => {
+      if (event === 'createdGroup' && group != null ) {
+        console.log('Group created:', [...prev]);
+        console.log('Group created:', group);
+        return [...prev, group];
+      } else if (event === 'removedGroup') {
+        return prev.filter(g => g.id !== groupId);
+      }
+      return prev;
+    });
+  }, []);
+
+  const onGroupMemberEvent = ({ groupId, event }: { groupId: string; event: 'memberAdded' | 'memberRemoved' }) => {
+    setGroups(prev => {
+      const updatedGroups = prev.map(g => {
+        if (g.id === groupId) {
+          return { ...g, memberCount: event === 'memberAdded' ? g.memberCount + 1 : g.memberCount - 1 };
+        }
+        return g;
+      });
+      return updatedGroups;
+    });
+  }
+
+
+  const onMessagesEvent = useCallback((message: Message) => {
+    addMessage(message);
+  }, [addMessage]);
+
+
+
   return {
     conversations,
     groups,
@@ -116,6 +153,9 @@ export const useChat = (): UseChatReturn => {
     createGroup,
     generateInviteLink,
     joinByInvite,
-    addMemberToGroup
+    addMemberToGroup,
+    onGroupMemberEvent,
+    onGroupEvent,
+    onMessagesEvent
   };
 };
