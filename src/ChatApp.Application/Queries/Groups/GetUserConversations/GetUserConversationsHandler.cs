@@ -15,6 +15,8 @@ public class GetUserConversationsHandler(
     public async Task<AppResponse<List<ConversationDto>>> Handle(GetUserConversationsQuery request, CancellationToken cancellationToken)
     {
 
+        var convs = await conversationRepository.GetAllAsync(c => c.User1Id == request.UserId || c.User2Id == request.UserId, cancellationToken: cancellationToken);
+
         var conversations = await _context.Messages
             .Where(m => m.GroupId == null && (m.SenderId == request.UserId || m.ReceiverId == request.UserId))
             .GroupBy(m => m.SenderId == request.UserId ? m.ReceiverId : m.SenderId)

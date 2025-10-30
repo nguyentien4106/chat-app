@@ -14,8 +14,8 @@ interface UseSignalRReturn {
   leaveGroup: (groupId: string) => Promise<void>;
   onReceiveMessage: (callback: (message: Message) => void) => void;
   onMemberAdded: (callback: (data: { groupId: string; userId: string; group: Group; message: Message }) => void) => void;
-  onMemberRemoved: (callback: (data: { groupId: string; userId: string }) => void) => void;
-  onMemberLeft: (callback: (data: { groupId: string; userId: string }) => void) => void;
+  onMemberRemoved: (callback: (data: { groupId: string; userId: string, message: Message }) => void) => void;
+  onMemberLeft: (callback: (data: { groupId: string; userId: string, message: Message}) => void) => void;
 }
 
 export const useSignalR = (): UseSignalRReturn => {
@@ -104,24 +104,28 @@ export const useSignalR = (): UseSignalRReturn => {
 
   const onReceiveMessage = useCallback((callback: (message: Message) => void) => {
     if (connection) {
+      connection.off('ReceiveMessage');
       connection.on('ReceiveMessage', callback);
     }
   }, [connection]);
 
   const onMemberAdded = useCallback((callback: (data: { groupId: string; userId: string, group: Group, message: Message }) => void) => {
     if (connection) {
+      connection.off('MemberAdded');
       connection.on('MemberAdded', callback);
     }
   }, [connection]);
 
-  const onMemberRemoved = useCallback((callback: (data: { groupId: string; userId: string }) => void) => {
+  const onMemberRemoved = useCallback((callback: (data: { groupId: string; userId: string, message: Message}) => void) => {
     if (connection) {
+      connection.off('MemberRemoved');
       connection.on('MemberRemoved', callback);
     }
   }, [connection]);
 
-  const onMemberLeft = useCallback((callback: (data: { groupId: string; userId: string }) => void) => {
+  const onMemberLeft = useCallback((callback: (data: { groupId: string; userId: string, message: Message }) => void) => {
     if (connection) {
+      connection.off('MemberLeft');
       connection.on('MemberLeft', callback);
     }
   }, [connection]);

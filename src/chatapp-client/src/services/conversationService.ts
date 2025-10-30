@@ -2,5 +2,7 @@ import { Conversation } from '@/types/chat.types';
 import { apiService } from './api';
 
 export const conversationService = {
-  getUserConversations: () => apiService.get<Conversation[]>('/api/conversations')
+  getUserConversations: () => apiService.get<Conversation[]>('/api/conversations'),
+  createConversation: (userId: string) =>
+    apiService.post<Conversation>('/api/conversations', { userId }),
 };

@@ -10,9 +10,12 @@ namespace ChatApp.Infrastructure;
 public class ChatAppDbContext(DbContextOptions<ChatAppDbContext> options) : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options), IChatAppDbContext
 {
     public DbSet<UserRefreshToken> UserRefreshTokens => Set<UserRefreshToken>();
+    
     public DbSet<Group> Groups => Set<Group>();
     public DbSet<GroupMember> GroupMembers => Set<GroupMember>();
     public DbSet<Message> Messages => Set<Message>();
+    
+    public DbSet<Conversation> Conversations => Set<Conversation>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

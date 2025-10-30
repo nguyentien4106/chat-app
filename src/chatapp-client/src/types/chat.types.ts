@@ -121,13 +121,13 @@ export interface RegisterRequest {
 export interface AuthResponse {
   token: string;
   userId: string;
-  username: string;
+  userName: string;
   email: string;
 }
 
 // src/types/chat.types.ts - Add to existing file
 export interface UserDto {
   id: string;
-  username: string;
+  userName: string;
   email: string;
 }

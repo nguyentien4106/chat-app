@@ -6,7 +6,7 @@ import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUserSearch } from '@/hooks/useUserSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { SendMessageRequest, UserDto, Message } from '@/types/chat.types';
-import { da } from 'date-fns/locale';
+import { is } from 'date-fns/locale';
 
 // Types
 export enum MessageType {
@@ -144,11 +144,15 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
 
   const currentUserOpeningGroup = (groupId: string, userId: string): boolean => {
-    return isCurrentUser(userId) && activeChat?.type === 'group' && activeChat.id === groupId;
+    return isCurrentUser(userId) && groupOpening(groupId);
   }
 
   const isCurrentUser = (userId: string): boolean => {
     return userId === currentUserId;
+  }
+
+  const groupOpening = (groupId: string): boolean => {
+    return activeChat?.type === 'group' && activeChat.id === groupId;
   }
 
   // SignalR message listener
@@ -161,17 +165,16 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             (message.senderId === activeChat.id || message.receiverId === activeChat.id)) ||
             (activeChat.type === 'group' && message.groupId === activeChat.id))
         ) {
-          addMessage(message);
+          onMessagesEvent(message);
         }
         
       });
       
       onMemberAdded((data) => {
-        console.log('Member added to group:', data);
+        // data.message 
         onGroupMemberEvent({ groupId: data.groupId, event: 'memberAdded' });
 
-        if (activeChat?.type === 'group' && activeChat.id === data.groupId) {
-          //loadMessages(activeChat.id, 'group');
+        if (groupOpening(data.groupId)) {
           onMessagesEvent(data.message);
         }
 
@@ -179,10 +182,14 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           onGroupEvent({ groupId: data.groupId, event: 'createdGroup', group: data.group });
           toast.success(`You are added to group ${data.group.name}`);
         }
+
       });
 
       onMemberRemoved((data) => {
         onGroupMemberEvent({ groupId: data.groupId, event: 'memberRemoved' });
+        if(groupOpening(data.groupId)) {
+          onMessagesEvent(data.message);
+        }
 
         if(isCurrentUser(data.userId)) {
           onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
@@ -192,23 +199,24 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setActiveChat(null);
           toast.info('You have been removed from the group');
         }
-        else if (activeChat?.type === 'group' && activeChat.id === data.groupId) {
-          loadMessages(activeChat.id, 'group');
-        }
 
-        // Refresh groups list to update member count
       });
 
       onMemberLeft((data) => {
-        if (currentUserOpeningGroup(data.groupId, data.userId)) {
+        onGroupMemberEvent({ groupId: data.groupId, event: 'memberRemoved' });
+
+        if(isCurrentUser(data.userId)) {
+          toast.info('You have left the group');
           setActiveChat(null);
-          onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
         }
 
-        // Refresh groups list to update member count
+        if (groupOpening(data.groupId)) {
+          onMessagesEvent(data.message);
+        }
+
       });
     }
-  }, [connection, activeChat, currentUserId, onReceiveMessage, onMemberAdded, onMemberRemoved, onMemberLeft, addMessage, loadConversations, loadGroups, setActiveChat]);
+  }, [connection, activeChat, currentUserId]);
   
   // Auto-scroll to bottom
   useEffect(() => {
@@ -321,7 +329,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
   
   const handleStartChat = async (user: UserDto) => {
-    setActiveChat({ id: user.id, name: user.username, type: 'user' });
+    setActiveChat({ id: user.id, name: user.userName, type: 'user' });
     await loadMessages(user.id, 'user');
   };
   

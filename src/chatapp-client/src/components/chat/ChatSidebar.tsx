@@ -153,11 +153,11 @@ export const ChatSidebar: React.FC = () => {
                       >
                         <Avatar>
                           <AvatarFallback>
-                            {user.username[0].toUpperCase()}
+                            {user.userName[0].toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                          <p className="font-medium">{user.username}</p>
+                          <p className="font-medium">{user.userName}</p>
                           <p className="text-sm text-gray-500">{user.email}</p>
                         </div>
                       </div>

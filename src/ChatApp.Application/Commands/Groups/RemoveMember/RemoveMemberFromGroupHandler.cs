@@ -1,3 +1,4 @@
+using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Hubs;
 using ChatApp.Application.Interfaces;
 using ChatApp.Application.Models;
@@ -59,9 +60,10 @@ public class RemoveMemberFromGroupHandler(
         };
 
         await messageRepository.AddAsync(notificationMessage, cancellationToken);
-
+        var message = notificationMessage.Adapt<MessageDto>();
+        
         await hubContext.Clients.Group(request.GroupId.ToString())
-            .SendAsync("MemberRemoved", new { GroupId = request.GroupId, UserId = request.UserId, RemovedMemberName = memberToRemove.User.UserName }, cancellationToken);
+            .SendAsync("MemberRemoved", new { GroupId = request.GroupId, UserId = request.UserId, RemovedMemberName = memberToRemove.User.UserName, Message = message }, cancellationToken);
 
         return AppResponse<Unit>.Success(Unit.Value);
     }

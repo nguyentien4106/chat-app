@@ -50,11 +50,16 @@ export const useChat = (): UseChatReturn => {
 
   const loadMessages = useCallback(async (chatId: string, type: 'user' | 'group') => {
     try {
-      const response = type === 'user'
+      const msgs = type === 'user'
         ? await messageService.getConversationMessages(chatId)
         : await messageService.getGroupMessages(chatId);
-      
-      setMessages(response.reverse());
+
+      if(msgs === null || msgs.length === 0) {
+        
+        return;
+      }
+
+      setMessages(msgs.reverse());
     } catch (error) {
       console.error('Error loading messages:', error);
     }
@@ -135,12 +140,9 @@ export const useChat = (): UseChatReturn => {
     });
   }
 
-
   const onMessagesEvent = useCallback((message: Message) => {
     addMessage(message);
   }, [addMessage]);
-
-
 
   return {
     conversations,

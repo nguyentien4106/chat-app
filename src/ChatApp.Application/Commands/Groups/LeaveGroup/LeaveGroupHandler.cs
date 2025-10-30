@@ -1,3 +1,4 @@
+using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Hubs;
 using ChatApp.Application.Interfaces;
 using ChatApp.Application.Models;
@@ -49,9 +50,10 @@ public class LeaveGroupHandler(
         };
 
         await messageRepository.AddAsync(notificationMessage, cancellationToken);
-
+        var message = notificationMessage.Adapt<MessageDto>();
+        
         await hubContext.Clients.Group(request.GroupId.ToString())
-            .SendAsync("MemberLeft", new { GroupId = request.GroupId, UserId = request.UserId, MemberName = member.User.UserName }, cancellationToken);
+            .SendAsync("MemberLeft", new { GroupId = request.GroupId, UserId = request.UserId, MemberName = member.User.UserName, Message = message }, cancellationToken);
 
         return AppResponse<Unit>.Success(Unit.Value);
     }
