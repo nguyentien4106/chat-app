@@ -2,6 +2,7 @@ using System.Security.Claims;
 using ChatApp.Application.Commands.Messages.SendMessage;
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Queries.Groups.GetUserGroups;
+using ChatApp.Application.Queries.Groups.GetUserConversations;
 using ChatApp.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -58,6 +59,16 @@ public class ChatHub : Hub
                     await Groups.AddToGroupAsync(Context.ConnectionId, group.Id.ToString());
                 }
             }
+
+            // Join user to all their conversations
+            var userConversationsResponse = await _mediator.Send(new GetUserConversationsQuery { UserId = Guid.Parse(userId) });
+            if (userConversationsResponse.IsSuccess && userConversationsResponse.Data != null)
+            {
+                foreach (var conversation in userConversationsResponse.Data)
+                {
+                    await Groups.AddToGroupAsync(Context.ConnectionId, conversation.ConversationId.ToString());
+                }
+            }
         }
 
         await base.OnConnectedAsync();
@@ -76,7 +87,7 @@ public class ChatHub : Hub
             throw new HubException("User not authenticated");
         }
 
-        request.SenderId = GetUserId();
+        request.SenderId = Guid.Parse(GetUserId() ?? string.Empty);
 
         var command = request.Adapt<SendMessageCommand>();
 
@@ -127,8 +138,10 @@ public class ChatHub : Hub
 
 public class SendMessageRequest
 {
-    public string? SenderId { get; set; }
+    public Guid SenderId { get; set; }
+    
     public Guid? ReceiverId { get; set; }
+    public Guid? ConversationId { get; set; }
     public Guid? GroupId { get; set; }
     public string? Content { get; set; } = string.Empty;
     

@@ -5,21 +5,8 @@ import { useChat } from '@/hooks/useChat';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUserSearch } from '@/hooks/useUserSearch';
 import { useAuth } from '@/contexts/AuthContext';
-import { SendMessageRequest, UserDto, Message } from '@/types/chat.types';
-import { is } from 'date-fns/locale';
-
-// Types
-export enum MessageType {
-  Text = 0,
-  Image = 1,
-  File = 2,
-}
-
-export interface ActiveChat {
-  id: string;
-  name: string;
-  type: 'user' | 'group';
-}
+import { SendMessageRequest, UserDto, Message, MessageType, ActiveChat } from '@/types/chat.types';
+import { JWT_CLAIMS } from '@/constants/jwtClaims';
 
 interface ChatContextType {
   // User
@@ -41,8 +28,10 @@ interface ChatContextType {
   
   // Conversations & Groups
   conversations: any[];
+  isLoadingConversations: boolean;
   groups: any[];
-  
+  isLoadingGroups: boolean;
+
   // File Upload
   isUploading: boolean;
   selectedFile: File | null;
@@ -78,7 +67,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Auth
   const { user } = useAuth();
-  const currentUserId = user?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+  const currentUserId = user?.[JWT_CLAIMS.NAME_IDENTIFIER];
   
   // Custom hooks
   const {
@@ -94,7 +83,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   const {
     conversations,
+    isLoadingConversations,
     groups,
+    isLoadingGroups,
     messages,
     loadConversations,
     loadGroups,
@@ -138,10 +129,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     if (isConnected) {
       loadConversations();
-      loadGroups();
+      //loadGroups();
     }
   }, [isConnected, loadConversations, loadGroups]);
-  
 
   const currentUserOpeningGroup = (groupId: string, userId: string): boolean => {
     return isCurrentUser(userId) && groupOpening(groupId);
@@ -152,7 +142,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 
   const groupOpening = (groupId: string): boolean => {
-    return activeChat?.type === 'group' && activeChat.id === groupId;
+    return activeChat?.type === 'group' && activeChat.groupId === groupId;
   }
 
   // SignalR message listener
@@ -162,11 +152,13 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (
           activeChat &&
           ((activeChat.type === 'user' &&
-            (message.senderId === activeChat.id || message.receiverId === activeChat.id)) ||
-            (activeChat.type === 'group' && message.groupId === activeChat.id))
+            (message.senderId === activeChat.receiverId || message.receiverId === currentUserId)) ||
+            (activeChat.type === 'group' && message.groupId === activeChat.groupId))
         ) {
           onMessagesEvent(message);
         }
+
+        console.log('Received message via SignalR:', message);
         
       });
       
@@ -257,8 +249,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const messageData: SendMessageRequest = {
         messageType: fileData ? fileData.messageType : MessageType.Text,
         content: messageInput.trim() || '',
-        groupId: activeChat.type === 'user' ? undefined : activeChat.id,
-        receiverId: activeChat.type === 'user' ? activeChat.id : undefined,
+        groupId: activeChat.type === 'group' ? activeChat.groupId : undefined,
+        receiverId: activeChat.type === 'user' ? activeChat.receiverId : undefined,
+        conversationId: activeChat.type === 'user' ? activeChat.conversationId : undefined,
         fileUrl: fileData ? fileData.fileUrl : undefined,
         fileName: fileData ? fileData.fileName : undefined,
         fileSize: fileData ? fileData.fileSize : undefined,
@@ -329,7 +322,13 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
   
   const handleStartChat = async (user: UserDto) => {
-    setActiveChat({ id: user.id, name: user.userName, type: 'user' });
+    setActiveChat({ 
+      id: user.id, 
+      name: user.userName, 
+      type: 'user',
+      conversationId: undefined, // null when starting a new chat
+      receiverId: user.id
+    });
     await loadMessages(user.id, 'user');
   };
   
@@ -359,7 +358,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     // Conversations & Groups
     conversations,
+    isLoadingConversations,
     groups,
+    isLoadingGroups,
     
     // File Upload
     isUploading,

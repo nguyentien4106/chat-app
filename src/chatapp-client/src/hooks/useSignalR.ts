@@ -32,25 +32,13 @@ export const useSignalR = (): UseSignalRReturn => {
         transport: signalR.HttpTransportType.WebSockets
       })
       .withAutomaticReconnect()
-      .configureLogging(signalR.LogLevel.Information)
+      .configureLogging(signalR.LogLevel.Error)
       .build();
 
     let isSubscribed = true;
+    let startPromise: Promise<void> | null = null;
 
-    newConnection.start()
-      .then(() => {
-        if (isSubscribed) {
-          console.log('SignalR Connected');
-          setIsConnected(true);
-        }
-      })
-      .catch(err => {
-        if (isSubscribed) {
-          console.error('SignalR Connection Error:', err);
-          setIsConnected(false);
-        }
-      });
-
+    // Set up event handlers before starting
     newConnection.onreconnecting(() => {
       console.log('Reconnecting...');
       setIsConnected(false);
@@ -68,12 +56,32 @@ export const useSignalR = (): UseSignalRReturn => {
 
     setConnection(newConnection);
 
+    // Start the connection
+    startPromise = newConnection.start()
+      .then(() => {
+        if (isSubscribed) {
+          console.log('SignalR Connected');
+          setIsConnected(true);
+        }
+      })
+      .catch(err => {
+        if (isSubscribed) {
+          console.error('SignalR Connection Error:', err);
+          setIsConnected(false);
+        }
+      });
+
     return () => {
       isSubscribed = false;
-      if (newConnection.state === signalR.HubConnectionState.Connected || 
-          newConnection.state === signalR.HubConnectionState.Connecting) {
-        newConnection.stop().catch(err => {
-          console.error('Error stopping connection:', err);
+      
+      // Wait for the start to complete (or fail) before stopping
+      if (startPromise) {
+        startPromise.finally(() => {
+          if (newConnection.state === signalR.HubConnectionState.Connected) {
+            newConnection.stop().catch(err => {
+              console.error('Error stopping connection:', err);
+            });
+          }
         });
       }
     };

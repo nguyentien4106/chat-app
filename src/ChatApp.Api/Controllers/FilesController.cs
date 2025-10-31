@@ -84,7 +84,7 @@ public class FilesController : AuthenticatedControllerBase
         var command = new SendMessageCommand
         {
             SenderId = userId,
-            ReceiverId = request.ReceiverId,
+            ConversationId = request.ConversationId,
             GroupId = request.GroupId,
             Content = request.Content,
             MessageType = request.Type,
@@ -125,7 +125,7 @@ public class FileUploadResponse
 
 public class SendFileMessageRequest
 {
-    public Guid? ReceiverId { get; set; }
+    public Guid? ConversationId { get; set; }
     public Guid? GroupId { get; set; }
     public string? Content { get; set; }
     public MessageTypes Type { get; set; }

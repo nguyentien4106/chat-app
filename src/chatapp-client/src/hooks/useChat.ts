@@ -5,10 +5,15 @@ import type { Conversation, Group, Message } from '@/types/chat.types';
 import { conversationService } from '@/services/conversationService';
 import { groupService } from '@/services/groupService';
 import { messageService } from '@/services/messageService';
+import { fi } from 'date-fns/locale';
 
 interface UseChatReturn {
   conversations: Conversation[];
+  isLoadingConversations: boolean;
+
   groups: Group[];
+  isLoadingGroups: boolean;
+
   messages: Message[];
   loadConversations: () => Promise<void>;
   loadGroups: () => Promise<void>;
@@ -27,24 +32,36 @@ interface UseChatReturn {
 
 export const useChat = (): UseChatReturn => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [isLoadingConversations, setIsLoadingConversations] = useState<boolean>(true);
+  const [isLoadingGroups, setIsLoadingGroups] = useState<boolean>(true);
   const [groups, setGroups] = useState<Group[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
 
   const loadConversations = useCallback(async () => {
+    setIsLoadingConversations(true);
     try {
       const result = await conversationService.getUserConversations();
+      setIsLoadingConversations(false);
       setConversations(result);
     } catch (error) {
       console.error('Error loading conversations:', error);
     }
+    finally {
+      setIsLoadingConversations(false);
+    }
   }, []);
 
   const loadGroups = useCallback(async () => {
+    setIsLoadingGroups(true);
     try {
       const result = await groupService.getUserGroups();
+      setIsLoadingGroups(false);
       setGroups(result);
     } catch (error) {
       console.error('Error loading groups:', error);
+    }
+    finally {
+      setIsLoadingGroups(false);
     }
   }, []);
 
@@ -146,7 +163,9 @@ export const useChat = (): UseChatReturn => {
 
   return {
     conversations,
+    isLoadingConversations,
     groups,
+    isLoadingGroups,
     messages,
     loadConversations,
     loadGroups,

@@ -31,6 +31,7 @@ export interface Message {
 }
 
 export interface Conversation {
+  conversationId: string;
   userId: string;
   username: string;
   lastMessage: string;
@@ -69,11 +70,15 @@ export interface ActiveChat {
   id: string;
   name: string;
   type: 'user' | 'group';
+  conversationId?: string; // For direct messages - null when starting a new chat
+  receiverId?: string; // For direct messages - the other user's ID
+  groupId?: string; // For group messages
 }
 
 export interface SendMessageRequest {
   content?: string;
   receiverId?: string;
+  conversationId?: string;
   groupId?: string;
   messageType: MessageType;
   fileUrl?: string;
@@ -130,4 +135,5 @@ export interface UserDto {
   id: string;
   userName: string;
   email: string;
+  isAdmin: boolean;
 }

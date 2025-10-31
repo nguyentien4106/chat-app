@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ChatApp.Infrastructure.Migrations
 {
     [DbContext(typeof(ChatAppDbContext))]
-    [Migration("20251030174556_addconversation")]
-    partial class addconversation
+    [Migration("20251031191633_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -155,6 +155,13 @@ namespace ChatApp.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("LastMessageAt")
+                        .HasDatabaseName("IX_Conversations_LastMessageAt");
+
+                    b.HasIndex("User1Id", "User2Id")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Conversations_Users");
+
                     b.ToTable("Conversations");
                 });
 
@@ -250,6 +257,9 @@ namespace ChatApp.Infrastructure.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
 
+                    b.Property<Guid?>("ConversationId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -280,9 +290,6 @@ namespace ChatApp.Infrastructure.Migrations
                     b.Property<int>("MessageType")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("ReceiverId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("SenderId")
                         .HasColumnType("uuid");
 
@@ -294,13 +301,18 @@ namespace ChatApp.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ConversationId");
+
+                    b.HasIndex("CreatedAt");
+
                     b.HasIndex("GroupId");
 
-                    b.HasIndex("ReceiverId");
+                    b.HasIndex("SenderId");
 
-                    b.HasIndex("SenderId", "ReceiverId");
-
-                    b.ToTable("Messages");
+                    b.ToTable("Messages", t =>
+                        {
+                            t.HasCheckConstraint("CK_Message_ConversationOrGroup", "(\"ConversationId\" IS NOT NULL AND \"GroupId\" IS NULL) OR (\"ConversationId\" IS NULL AND \"GroupId\" IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("ChatApp.Domain.Entities.UserRefreshToken", b =>
@@ -487,15 +499,15 @@ namespace ChatApp.Infrastructure.Migrations
 
             modelBuilder.Entity("ChatApp.Domain.Entities.Message", b =>
                 {
+                    b.HasOne("ChatApp.Domain.Entities.Conversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("ChatApp.Domain.Entities.Group", "Group")
                         .WithMany("Messages")
                         .HasForeignKey("GroupId")
                         .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("ChatApp.Domain.Entities.ApplicationUser", "Receiver")
-                        .WithMany()
-                        .HasForeignKey("ReceiverId")
-                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ChatApp.Domain.Entities.ApplicationUser", "Sender")
                         .WithMany()
@@ -503,9 +515,9 @@ namespace ChatApp.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Group");
+                    b.Navigation("Conversation");
 
-                    b.Navigation("Receiver");
+                    b.Navigation("Group");
 
                     b.Navigation("Sender");
                 });
@@ -577,6 +589,11 @@ namespace ChatApp.Infrastructure.Migrations
                     b.Navigation("GroupMembers");
 
                     b.Navigation("RefreshToken");
+                });
+
+            modelBuilder.Entity("ChatApp.Domain.Entities.Conversation", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("ChatApp.Domain.Entities.Group", b =>

@@ -14,37 +14,30 @@ public class GetUserConversationsHandler(
 
     public async Task<AppResponse<List<ConversationDto>>> Handle(GetUserConversationsQuery request, CancellationToken cancellationToken)
     {
-
-        var convs = await conversationRepository.GetAllAsync(c => c.User1Id == request.UserId || c.User2Id == request.UserId, cancellationToken: cancellationToken);
-
-        var conversations = await _context.Messages
-            .Where(m => m.GroupId == null && (m.SenderId == request.UserId || m.ReceiverId == request.UserId))
-            .GroupBy(m => m.SenderId == request.UserId ? m.ReceiverId : m.SenderId)
-            .Select(g => new
-            {
-                OtherUserId = g.Key,
-                LastMessage = g.OrderByDescending(m => m.CreatedAt).First()
-            })
-            .ToListAsync(cancellationToken);
+        // Get all conversations where the user is a participant
+        var userConversations = await conversationRepository.GetAllAsync(
+            filter: c => c.User1Id == request.UserId || c.User2Id == request.UserId,
+            includeProperties: ["Messages"],
+            cancellationToken: cancellationToken);
 
         var result = new List<ConversationDto>();
-        foreach (var conv in conversations)
+        foreach (var conv in userConversations)
         {
-            if (!conv.OtherUserId.HasValue) continue;
-
-            var otherUser = await _context.Users.FindAsync(conv.OtherUserId.Value, cancellationToken);
+            var otherUserId = conv.GetOtherUserId(request.UserId);
+            var otherUser = await _context.Users.FindAsync(otherUserId, cancellationToken);
             if (otherUser == null) continue;
+
+            var lastMessage = conv.Messages.OrderByDescending(m => m.CreatedAt).FirstOrDefault();
+            if (lastMessage == null) continue;
 
             result.Add(new ConversationDto
             {
-                UserId = conv.OtherUserId.Value,
-                Username = otherUser.UserName,
-                LastMessage = conv.LastMessage.Content,
-                LastMessageAt = conv.LastMessage.CreatedAt,
-                UnreadCount = await _context.Messages
-                    .CountAsync(m => m.SenderId == conv.OtherUserId.Value && 
-                                     m.ReceiverId == request.UserId && 
-                                     !m.IsRead, cancellationToken)
+                ConversationId = conv.Id,
+                UserId = otherUserId,
+                Username = otherUser.UserName ?? string.Empty,
+                LastMessage = lastMessage.Content ?? string.Empty,
+                LastMessageAt = conv.LastMessageAt,
+                UnreadCount = conv.Messages.Count(m => m.SenderId == otherUserId && !m.IsRead)
             });
         }
 

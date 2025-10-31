@@ -59,7 +59,7 @@ public class MessagesController(IMediator mediator) : AuthenticatedControllerBas
         var command = new SendMessageCommand
         {
             SenderId = userId,
-            ReceiverId = request.ReceiverId,
+            ConversationId = request.ConversationId,
             GroupId = request.GroupId,
             Content = request.Content
         };

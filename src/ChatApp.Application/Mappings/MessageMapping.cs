@@ -10,7 +10,7 @@ public class MessageMapping : IRegister
             .Map(dest => dest.Id, src => src.Id)
             .Map(dest => dest.Content, src => src.Content)
             .Map(dest => dest.SenderId, src => src.SenderId)
-            .Map(dest => dest.ReceiverId, src => src.ReceiverId)
+            .Map(dest => dest.ConversationId, src => src.ConversationId)
             .Map(dest => dest.FileName, src => src.FileName)
             .Map(dest => dest.FileSize, src => src.FileSize)
             .Map(dest => dest.FileType, src => src.FileType)

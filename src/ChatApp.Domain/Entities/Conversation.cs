@@ -7,6 +7,7 @@ public class Conversation : Entity<Guid>
 {
     public Guid User1Id { get; set; }
     public Guid User2Id { get; set; }
+    public ICollection<Message> Messages { get; set; } = [];
     public DateTime LastMessageAt { get; set; }
     
     // Helper method to check if a user is part of this conversation

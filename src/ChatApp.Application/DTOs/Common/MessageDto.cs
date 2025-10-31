@@ -14,7 +14,9 @@ public class MessageDto
     public long? FileSize { get; set; }
     public Guid SenderId { get; set; }
     public string? SenderUsername { get; set; }
-    public Guid? ReceiverId { get; set; }
+    
+    public Guid ReceiverId { get; set; }
+    public Guid? ConversationId { get; set; }
     public Guid? GroupId { get; set; }
     public DateTime CreatedAt { get; set; }
     public bool IsRead { get; set; }

@@ -14,30 +14,38 @@ public class SendMessageHandler(
 {
     public async Task<AppResponse<MessageDto>> Handle(SendMessageCommand request, CancellationToken cancellationToken)
     {
-        // 1. Get or create conversation first (only for direct messages, not groups)
-        Conversation? conversation = null;
-        if (request.ReceiverId.HasValue && !request.GroupId.HasValue)
+        var message = request.Adapt<Message>();
+        Conversation conversation;
+        // // If it's a direct message (not a group message), get or create conversation
+        // if (request is { ReceiverId: not null, GroupId: null })
+        // {
+        //     conversation = await GetOrCreateConversationAsync(
+        //         request.SenderId, 
+        //         request.ReceiverId.Value, 
+        //         cancellationToken);
+        //     
+        //     message.ConversationId = conversation.Id;
+        //     
+        //     // Update conversation's last message timestamp
+        //     conversation.LastMessageAt = DateTime.UtcNow;
+        //     await conversationRepository.UpdateAsync(conversation, cancellationToken);
+        // }
+        if (request.ConversationId.HasValue)
+        {
+            conversation = await conversationRepository.GetByIdAsync(request.ConversationId.Value, cancellationToken: cancellationToken);
+        }
+        else
         {
             conversation = await GetOrCreateConversationAsync(
-                request.SenderId, 
-                request.ReceiverId.Value, 
-                cancellationToken);
-        }
-
-        // 2. Create and save message
-        var message = request.Adapt<Message>();
-        await messageRepository.AddAsync(message, cancellationToken);
-
-        // 3. Update conversation's LastMessageAt (only for direct messages)
-        if (conversation != null)
-        {
-            conversation.LastMessageAt = message.CreatedAt;
-            await conversationRepository.UpdateAsync(conversation, cancellationToken);
+            request.SenderId, 
+            request.ReceiverId.Value, 
+            cancellationToken);
         }
         
+        await messageRepository.AddAsync(message, cancellationToken);
+
         // Load sender info
         logger.LogInformation("Message sent: {MessageId} from user: {SenderId}", message.Id, request.SenderId);
-        var sender = message.Sender;
 
         var messageDto = message.Adapt<MessageDto>();
 
@@ -47,9 +55,9 @@ public class SendMessageHandler(
             await hubContext.Clients.Group(request.GroupId.Value.ToString())
                 .SendAsync("ReceiveMessage", messageDto, cancellationToken);
         }
-        else if (request.ReceiverId.HasValue)
+        else if (request.ConversationId.HasValue)
         {
-            await hubContext.Clients.User(request.ReceiverId.Value.ToString())
+            await hubContext.Clients.User(request.ConversationId.Value.ToString())
                 .SendAsync("ReceiveMessage", messageDto, cancellationToken);
         }
 

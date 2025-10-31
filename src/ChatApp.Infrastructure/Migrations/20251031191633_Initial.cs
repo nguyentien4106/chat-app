@@ -62,6 +62,24 @@ namespace ChatApp.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Conversations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    User1Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    User2Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    LastMessageAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Conversations", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Groups",
                 columns: table => new
                 {
@@ -253,8 +271,8 @@ namespace ChatApp.Infrastructure.Migrations
                     FileType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     FileSize = table.Column<long>(type: "bigint", nullable: true),
                     SenderId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ConversationId = table.Column<Guid>(type: "uuid", nullable: true),
                     GroupId = table.Column<Guid>(type: "uuid", nullable: true),
-                    ReceiverId = table.Column<Guid>(type: "uuid", nullable: true),
                     IsRead = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -264,18 +282,19 @@ namespace ChatApp.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Messages", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Messages_AspNetUsers_ReceiverId",
-                        column: x => x.ReceiverId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                    table.CheckConstraint("CK_Message_ConversationOrGroup", "(\"ConversationId\" IS NOT NULL AND \"GroupId\" IS NULL) OR (\"ConversationId\" IS NULL AND \"GroupId\" IS NOT NULL)");
                     table.ForeignKey(
                         name: "FK_Messages_AspNetUsers_SenderId",
                         column: x => x.SenderId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Messages_Conversations_ConversationId",
+                        column: x => x.ConversationId,
+                        principalTable: "Conversations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Messages_Groups_GroupId",
                         column: x => x.GroupId,
@@ -336,6 +355,17 @@ namespace ChatApp.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Conversations_LastMessageAt",
+                table: "Conversations",
+                column: "LastMessageAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Conversations_Users",
+                table: "Conversations",
+                columns: new[] { "User1Id", "User2Id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_GroupMembers_GroupId",
                 table: "GroupMembers",
                 column: "GroupId");
@@ -351,19 +381,24 @@ namespace ChatApp.Infrastructure.Migrations
                 column: "InviteCode");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Messages_ConversationId",
+                table: "Messages",
+                column: "ConversationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Messages_CreatedAt",
+                table: "Messages",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Messages_GroupId",
                 table: "Messages",
                 column: "GroupId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Messages_ReceiverId",
+                name: "IX_Messages_SenderId",
                 table: "Messages",
-                column: "ReceiverId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Messages_SenderId_ReceiverId",
-                table: "Messages",
-                columns: new[] { "SenderId", "ReceiverId" });
+                column: "SenderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserRefreshTokens_ApplicationUserId",
@@ -401,6 +436,9 @@ namespace ChatApp.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
+
+            migrationBuilder.DropTable(
+                name: "Conversations");
 
             migrationBuilder.DropTable(
                 name: "Groups");
