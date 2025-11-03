@@ -13,7 +13,6 @@ public class Message : Entity<Guid>
     public long? FileSize { get; set; }
     public Guid SenderId { get; set; }
     public ApplicationUser Sender { get; set; } = null!;
-    
     public Guid? ConversationId { get; set; }
     public Conversation? Conversation { get; set; }
     public Guid? GroupId { get; set; }

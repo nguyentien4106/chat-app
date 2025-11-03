@@ -3,6 +3,7 @@ using System;
 using ChatApp.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ChatApp.Infrastructure.Migrations
 {
     [DbContext(typeof(ChatAppDbContext))]
-    partial class ChatAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251103063441_AddConversationNavigationProperties")]
+    partial class AddConversationNavigationProperties
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -138,26 +141,26 @@ namespace ChatApp.Infrastructure.Migrations
                     b.Property<DateTime>("LastMessageAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("ReceiverId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("SenderId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("text");
 
+                    b.Property<Guid>("User1Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("User2Id")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("LastMessageAt")
                         .HasDatabaseName("IX_Conversations_LastMessageAt");
 
-                    b.HasIndex("ReceiverId");
+                    b.HasIndex("User2Id");
 
-                    b.HasIndex("SenderId", "ReceiverId")
+                    b.HasIndex("User1Id", "User2Id")
                         .IsUnique()
                         .HasDatabaseName("IX_Conversations_Users");
 
@@ -479,21 +482,21 @@ namespace ChatApp.Infrastructure.Migrations
 
             modelBuilder.Entity("ChatApp.Domain.Entities.Conversation", b =>
                 {
-                    b.HasOne("ChatApp.Domain.Entities.ApplicationUser", "Receiver")
-                        .WithMany("ConversationsAsReceiver")
-                        .HasForeignKey("ReceiverId")
+                    b.HasOne("ChatApp.Domain.Entities.ApplicationUser", "User1")
+                        .WithMany("ConversationsAsUser1")
+                        .HasForeignKey("User1Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("ChatApp.Domain.Entities.ApplicationUser", "Sender")
-                        .WithMany("ConversationsAsSender")
-                        .HasForeignKey("SenderId")
+                    b.HasOne("ChatApp.Domain.Entities.ApplicationUser", "User2")
+                        .WithMany("ConversationsAsUser2")
+                        .HasForeignKey("User2Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Receiver");
+                    b.Navigation("User1");
 
-                    b.Navigation("Sender");
+                    b.Navigation("User2");
                 });
 
             modelBuilder.Entity("ChatApp.Domain.Entities.GroupMember", b =>
@@ -604,9 +607,9 @@ namespace ChatApp.Infrastructure.Migrations
 
             modelBuilder.Entity("ChatApp.Domain.Entities.ApplicationUser", b =>
                 {
-                    b.Navigation("ConversationsAsReceiver");
+                    b.Navigation("ConversationsAsUser1");
 
-                    b.Navigation("ConversationsAsSender");
+                    b.Navigation("ConversationsAsUser2");
 
                     b.Navigation("GroupMembers");
 

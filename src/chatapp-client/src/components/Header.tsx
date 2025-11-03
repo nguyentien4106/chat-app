@@ -15,12 +15,12 @@ import { useDarkMode } from '@/hooks/useDarkMode'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useNavigate } from 'react-router-dom'
+import { JWT_CLAIMS } from '@/constants/jwtClaims'
 
 export const Header = () => {
   const { isDark, toggleDark } = useDarkMode()
   const { user, logout } = useAuth()
   const { toggleSidebar } = useSidebar()
-  console.log(user)
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -72,11 +72,11 @@ export const Header = () => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2 md:gap-3">
               <div className="text-right hidden md:block">
-                <p className="text-sm font-medium">{user?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name']}</p>
-                <p className="text-xs text-muted-foreground">{user?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress']}</p>
+                <p className="text-sm font-medium">{user?.[JWT_CLAIMS.NAME]}</p>
+                <p className="text-xs text-muted-foreground">{user?.[JWT_CLAIMS.EMAIL]}</p>
               </div>
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm md:text-base">
-                {user ? getInitials(user?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name']) : 'U'}
+                {user ? getInitials(user?.[JWT_CLAIMS.NAME]) : 'U'}
               </div>
             </Button>
           </DropdownMenuTrigger>

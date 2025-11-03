@@ -41,9 +41,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             : "bg-white text-gray-900 border border-gray-200"
         }`}
       >
-        {showSender && !isOwn && message.senderUsername && (
+        {showSender && !isOwn && message.senderUserName && (
           <p className="text-xs font-semibold mb-1 opacity-70">
-            {message.senderUsername}
+            {message.senderUserName}
           </p>
         )}
 

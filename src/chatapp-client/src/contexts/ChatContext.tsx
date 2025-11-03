@@ -1,11 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useSignalR } from '@/hooks/useSignalR';
 import { useChat } from '@/hooks/useChat';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUserSearch } from '@/hooks/useUserSearch';
 import { useAuth } from '@/contexts/AuthContext';
-import { SendMessageRequest, UserDto, Message, MessageType, ActiveChat } from '@/types/chat.types';
+import { SendMessageRequest, UserDto, Message, MessageType, ActiveChat, Conversation } from '@/types/chat.types';
 import { JWT_CLAIMS } from '@/constants/jwtClaims';
 
 interface ChatContextType {
@@ -25,9 +25,10 @@ interface ChatContextType {
   messageInput: string;
   setMessageInput: (input: string) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  messageInputRef: React.RefObject<HTMLInputElement | null>;
   
   // Conversations & Groups
-  conversations: any[];
+  conversations: Conversation[];
   isLoadingConversations: boolean;
   groups: any[];
   isLoadingGroups: boolean;
@@ -58,6 +59,7 @@ interface ChatContextType {
   handleClearFile: () => void;
   handleSearchUsers: (query: string) => void;
   handleClearSearch: () => void;
+  handleMarkAsRead: (conversationId: string, senderId: string) => Promise<void>;
 
   // Events
 }
@@ -88,6 +90,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isLoadingGroups,
     messages,
     loadConversations,
+    addConversation,
     loadGroups,
     loadMessages,
     addMessage,
@@ -95,9 +98,11 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     generateInviteLink,
     joinByInvite,
     addMemberToGroup,
+    markConversationAsRead,
     onGroupMemberEvent,
     onGroupEvent,
-    onMessagesEvent
+    onMessagesEvent,
+    onLastMessageEvent
   } = useChat();
   
   const {
@@ -124,42 +129,65 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const messageInputRef = useRef<HTMLInputElement>(null);
   
   // Load initial data
   useEffect(() => {
     if (isConnected) {
       loadConversations();
-      //loadGroups();
+      loadGroups();
     }
   }, [isConnected, loadConversations, loadGroups]);
 
-  const currentUserOpeningGroup = (groupId: string, userId: string): boolean => {
-    return isCurrentUser(userId) && groupOpening(groupId);
-  }
-
-  const isCurrentUser = (userId: string): boolean => {
+  const isCurrentUser = useCallback((userId: string): boolean => {
     return userId === currentUserId;
-  }
+  }, [currentUserId]);
 
-  const groupOpening = (groupId: string): boolean => {
+  const groupOpening = useCallback((groupId: string): boolean => {
     return activeChat?.type === 'group' && activeChat.groupId === groupId;
-  }
+  }, [activeChat]);
+
+  const currentUserOpeningGroup = useCallback((groupId: string, userId: string): boolean => {
+    return isCurrentUser(userId) && groupOpening(groupId);
+  }, [isCurrentUser, groupOpening]);
+
+  const hasGroupNotification = useCallback((groupId: string): boolean => {
+    return groups.some(group => group.id === groupId);
+  }, [groups])
 
   // SignalR message listener
   useEffect(() => {
     if (connection) {
       onReceiveMessage((message) => {
+        if(message.receiverId === currentUserId) {
+          onLastMessageEvent && onLastMessageEvent(message);
+        }
+        
         if (
           activeChat &&
           ((activeChat.type === 'user' &&
-            (message.senderId === activeChat.receiverId || message.receiverId === currentUserId)) ||
+            (message.receiverId === currentUserId)) ||
             (activeChat.type === 'group' && message.groupId === activeChat.groupId))
         ) {
           onMessagesEvent(message);
         }
 
-        console.log('Received message via SignalR:', message);
+        // Show notification for direct messages
+        if(currentUserId && message.receiverId === currentUserId && message.senderId !== currentUserId) {
+          toast.info(message.senderUserName, {
+            description: message.content,
+            duration: 5000,
+          });
+        }
         
+        // Show notification for group messages if user is in the group and not currently viewing it
+        if (message.groupId && message.senderId !== currentUserId && hasGroupNotification(message.groupId) && !groupOpening(message.groupId)) {
+          toast.info(`${message.groupName}`, {
+            description: `${message.senderUserName}: ${message.content}`,
+            duration: 5000,
+          });
+        }
+
       });
       
       onMemberAdded((data) => {
@@ -208,7 +236,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       });
     }
-  }, [connection, activeChat, currentUserId]);
+  }, [connection, activeChat, currentUserId, groups, hasGroupNotification, groupOpening, isCurrentUser, onMessagesEvent, onGroupMemberEvent, onGroupEvent]);
   
   // Auto-scroll to bottom
   useEffect(() => {
@@ -222,7 +250,14 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     if (chat.type === 'group') {
       await joinGroup(chat.id);
+    } else if (chat.type === 'user' && chat.conversationId) {
+      // Mark messages as read for direct conversations
+      await markConversationAsRead(chat.conversationId, chat.id);
     }
+    
+    setTimeout(() => {
+      messageInputRef.current?.focus();
+    }, 100);
   };
   
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, isImage: boolean): void => {
@@ -260,6 +295,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       const newMessage = await sendSignalRMessage(messageData);
       addMessage(newMessage!);
+      onLastMessageEvent && onLastMessageEvent(newMessage!);
       setMessageInput('');
       clearSelection();
     } catch (error: any) {
@@ -329,6 +365,17 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       conversationId: undefined, // null when starting a new chat
       receiverId: user.id
     });
+
+    const newConv: Conversation= {
+      id: undefined,
+      userId: user.id,
+      userName: user.userName,
+      lastMessage: '',
+      unreadCount: 0,
+    }
+
+    addConversation(newConv);
+    
     await loadMessages(user.id, 'user');
   };
   
@@ -337,6 +384,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const handleClearFile = () => clearSelection();
   const handleSearchUsers = (query: string) => searchUsers(query);
   const handleClearSearch = () => clearSearch();
+  const handleMarkAsRead = async (conversationId: string, senderId: string) => {
+    await markConversationAsRead(conversationId, senderId);
+  };
   
   const value: ChatContextType = {
     // User
@@ -355,6 +405,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     messageInput,
     setMessageInput,
     messagesEndRef,
+    messageInputRef,
     
     // Conversations & Groups
     conversations,
@@ -388,6 +439,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     handleClearFile,
     handleSearchUsers,
     handleClearSearch,
+    handleMarkAsRead,
   };
   
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

@@ -2,30 +2,17 @@ import React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Loader2 } from "lucide-react";
-import { ActiveChat } from "@/types/chat.types";
+import { useChatContext } from "@/contexts/ChatContext";
 
-interface Conversation {
-  conversationId: string;
-  userId: string;
-  username: string;
-  lastMessage: string;
-  unreadCount: number;
-}
+export const ConversationsList: React.FC = () => {
 
+  const {
+    conversations,
+    isLoadingConversations,
+    activeChat,
+    handleChatSelect
+  } = useChatContext();
 
-interface ConversationsListProps {
-  conversations: Conversation[];
-  activeChat: ActiveChat | null;
-  isLoadingConversations: boolean;
-  onChatSelect: (chat: ActiveChat) => Promise<void>;
-}
-
-export const ConversationsList: React.FC<ConversationsListProps> = ({
-  conversations,
-  activeChat,
-  isLoadingConversations,
-  onChatSelect,
-}) => {
   return (
     <ScrollArea className="h-full px-4">
       {isLoadingConversations ? (
@@ -41,26 +28,26 @@ export const ConversationsList: React.FC<ConversationsListProps> = ({
           <div
             key={conv.userId}
             onClick={() =>
-              onChatSelect({
-                id: conv.userId,
-                name: conv.username,
+              handleChatSelect({
+                id: conv.id ?? "",
+                name: conv.userName,
                 type: "user",
-                conversationId: conv.conversationId,
+                conversationId: conv.id,
                 receiverId: conv.userId,
               })
             }
             className={`p-4 border-b cursor-pointer hover:bg-gray-50 ${
-              activeChat?.id === conv.userId ? "bg-blue-50" : ""
+              activeChat?.id === conv.id ? "bg-blue-50" : ""
             }`}
           >
             <div className="flex items-center space-x-3">
               <Avatar>
                 <AvatarFallback>
-                  {conv.username[0].toUpperCase()}
+                  {conv.userName[0].toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{conv.username}</p>
+                <p className="font-medium truncate">{conv.userName}</p>
                 <p className="text-sm text-gray-500 truncate">
                   {conv.lastMessage}
                 </p>

@@ -2,6 +2,7 @@ import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSquare, Users } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
+import { useSidebar } from "@/contexts/SidebarContext";
 import { SidebarHeader } from "./SidebarHeader";
 import { SearchDialog } from "./SearchDialog";
 import { ConversationsList } from "./ConversationsList";
@@ -10,21 +11,10 @@ import { GroupsList } from "./GroupsList";
 import { UserDto } from "@/types/chat.types";
 
 export const ChatSidebar: React.FC = () => {
+  const { isOpen } = useSidebar();
   const {
-    user,
-    isConnected,
-    activeChat,
-    conversations,
-    groups,
     searchResults,
     isSearching,
-    isLoadingConversations,
-    isLoadingGroups,
-    handleChatSelect,
-    handleCreateGroup,
-    handleJoinByInvite,
-    handleAddMember,
-    handleGenerateInvite,
     handleSearchUsers,
     handleClearSearch,
     handleStartChat,
@@ -50,9 +40,11 @@ export const ChatSidebar: React.FC = () => {
     handleClearSearch();
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="w-80 bg-white border-r flex flex-col h-full">
-      <SidebarHeader user={user} isConnected={isConnected} />
+      <SidebarHeader />
 
       <SearchDialog
         open={showSearch}
@@ -78,10 +70,6 @@ export const ChatSidebar: React.FC = () => {
 
         <TabsContent value="chats" className="flex-1 overflow-hidden mt-2 mx-0">
           <ConversationsList
-            conversations={conversations}
-            activeChat={activeChat}
-            isLoadingConversations={isLoadingConversations}
-            onChatSelect={handleChatSelect}
           />
         </TabsContent>
 
@@ -90,17 +78,9 @@ export const ChatSidebar: React.FC = () => {
           className="flex-1 overflow-hidden flex flex-col mt-2 mx-0 min-h-0"
         >
           <GroupActions
-            onCreateGroup={handleCreateGroup}
-            onJoinByInvite={handleJoinByInvite}
           />
 
           <GroupsList
-            groups={groups}
-            activeChat={activeChat}
-            isLoadingGroups={isLoadingGroups}
-            onChatSelect={handleChatSelect}
-            onAddMember={handleAddMember}
-            onGenerateInvite={handleGenerateInvite}
           />
         </TabsContent>
       </Tabs>

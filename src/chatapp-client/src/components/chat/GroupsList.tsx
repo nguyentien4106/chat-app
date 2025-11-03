@@ -11,29 +11,20 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Users, UserPlus, Loader2 } from "lucide-react";
-import { ActiveChat, Group } from "@/types/chat.types";
+import { useChatContext } from "@/contexts/ChatContext";
 
-interface GroupsListProps {
-  groups: Group[];
-  activeChat: ActiveChat | null;
-  isLoadingGroups: boolean;
-  onChatSelect: (chat: ActiveChat) => void;
-  onAddMember: (groupId: string, userName: string) => void;
-  onGenerateInvite: (groupId: string) => void;
-}
-
-export const GroupsList: React.FC<GroupsListProps> = ({
-  groups,
-  activeChat,
-  isLoadingGroups,
-  onChatSelect,
-  onAddMember,
-  onGenerateInvite,
-}) => {
+export const GroupsList: React.FC = () => {
   const [addUserName, setAddUserName] = React.useState("");
-
+  const {
+    groups,
+    activeChat,
+    isLoadingGroups,
+    handleChatSelect,
+    handleAddMember,
+    handleGenerateInvite,
+  } = useChatContext()
   const handleAddMemberClick = (groupId: string) => {
-    onAddMember(groupId, addUserName);
+    handleAddMember(groupId, addUserName);
     setAddUserName("");
   };
 
@@ -50,7 +41,7 @@ export const GroupsList: React.FC<GroupsListProps> = ({
           <div
             key={group.id}
             onClick={() =>
-              onChatSelect({
+              handleChatSelect({
                 id: group.id,
                 name: group.name,
                 type: "group",
@@ -104,7 +95,7 @@ export const GroupsList: React.FC<GroupsListProps> = ({
                     <div>
                       <p className="text-sm font-medium mb-2">Invite Link</p>
                       <Button
-                        onClick={() => onGenerateInvite(group.id)}
+                        onClick={() => handleGenerateInvite(group.id)}
                         className="w-full"
                       >
                         Generate Invite Code

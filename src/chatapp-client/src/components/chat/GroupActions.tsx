@@ -9,16 +9,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { LinkIcon } from "lucide-react";
+import { useChatContext } from "@/contexts/ChatContext";
 
-interface GroupActionsProps {
-  onCreateGroup: (name: string, description: string) => void;
-  onJoinByInvite: (code: string) => void;
-}
-
-export const GroupActions: React.FC<GroupActionsProps> = ({
-  onCreateGroup,
-  onJoinByInvite,
-}) => {
+export const GroupActions: React.FC = () => {
+  const {
+    handleCreateGroup,
+    handleJoinByInvite,
+  } = useChatContext()
+  
   const [newGroupName, setNewGroupName] = React.useState("");
   const [newGroupDescription, setNewGroupDescription] = React.useState("");
   const [inviteCode, setInviteCode] = React.useState("");
@@ -26,14 +24,14 @@ export const GroupActions: React.FC<GroupActionsProps> = ({
   const [showJoinByCode, setShowJoinByCode] = React.useState(false);
 
   const handleCreateGroupClick = () => {
-    onCreateGroup(newGroupName, newGroupDescription);
+    handleCreateGroup(newGroupName, newGroupDescription);
     setNewGroupName("");
     setNewGroupDescription("");
     setShowCreateGroup(false);
   };
 
   const handleJoinByInviteClick = () => {
-    onJoinByInvite(inviteCode);
+    handleJoinByInvite(inviteCode);
     setInviteCode("");
     setShowJoinByCode(false);
   };

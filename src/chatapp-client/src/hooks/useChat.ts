@@ -5,7 +5,7 @@ import type { Conversation, Group, Message } from '@/types/chat.types';
 import { conversationService } from '@/services/conversationService';
 import { groupService } from '@/services/groupService';
 import { messageService } from '@/services/messageService';
-import { fi } from 'date-fns/locale';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UseChatReturn {
   conversations: Conversation[];
@@ -16,6 +16,7 @@ interface UseChatReturn {
 
   messages: Message[];
   loadConversations: () => Promise<void>;
+  addConversation: (conversation: Conversation) => void;
   loadGroups: () => Promise<void>;
   loadMessages: (chatId: string, type: 'user' | 'group') => Promise<void>;
   addMessage: (message: Message) => void;
@@ -23,11 +24,13 @@ interface UseChatReturn {
   generateInviteLink: (groupId: string) => Promise<string>;
   joinByInvite: (inviteCode: string) => Promise<void>;
   addMemberToGroup: (groupId: string, userName: string) => Promise<void>;
+  markConversationAsRead: (conversationId: string, senderId: string) => Promise<void>;
 
   //Events
   onGroupMemberEvent: (data: { groupId: string; event: 'memberAdded' | 'memberRemoved' }) => void;
   onGroupEvent: (data: { groupId: string; event: 'createdGroup' | 'removedGroup', group: Group | null }) => void;
   onMessagesEvent: (message: Message) => void;
+  onLastMessageEvent?: (message: Message) => void;
 }
 
 export const useChat = (): UseChatReturn => {
@@ -36,7 +39,7 @@ export const useChat = (): UseChatReturn => {
   const [isLoadingGroups, setIsLoadingGroups] = useState<boolean>(true);
   const [groups, setGroups] = useState<Group[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-
+  const { applicationUserId } = useAuth();
   const loadConversations = useCallback(async () => {
     setIsLoadingConversations(true);
     try {
@@ -76,7 +79,9 @@ export const useChat = (): UseChatReturn => {
         return;
       }
 
-      setMessages(msgs.reverse());
+      console.log('Loaded messages:', msgs);
+
+      setMessages(msgs);
     } catch (error) {
       console.error('Error loading messages:', error);
     }
@@ -135,8 +140,6 @@ export const useChat = (): UseChatReturn => {
   const onGroupEvent = useCallback(({ groupId, event, group }: { groupId: string; event: 'createdGroup' | 'removedGroup', group: Group | null }) => {
     setGroups(prev => {
       if (event === 'createdGroup' && group != null ) {
-        console.log('Group created:', [...prev]);
-        console.log('Group created:', group);
         return [...prev, group];
       } else if (event === 'removedGroup') {
         return prev.filter(g => g.id !== groupId);
@@ -161,6 +164,57 @@ export const useChat = (): UseChatReturn => {
     addMessage(message);
   }, [addMessage]);
 
+  const onLastMessageEvent = useCallback((message: Message) => {
+    console.log('Updating conversations/groups with new message', message);
+    if(message.conversationId){
+      setConversations(prev => {
+        return prev.map(conv => {
+          if (conv.id === message.conversationId) {
+            return { ...conv, lastMessage: message.content || '', unreadCount: conv.unreadCount + (message.receiverId === applicationUserId ? 1 : 0) };
+          }
+          return conv;
+        });
+      });
+    }
+
+    if(message.groupId){
+      // For group messages, we might want to update the last message in the groups list if needed
+      // This part can be implemented as per requirements
+      setGroups(prev => {
+        return prev.map(group => {
+          if (group.id === message.groupId) {
+            return { ...group, lastMessage: message };
+          }
+          return group;
+        });
+      });
+    }
+  }, []);
+
+  const addConversation = useCallback((conversation: Conversation) => {
+    setConversations(prev => {
+      const exists = prev.some(c => c.id === conversation.id);
+      if (exists) return prev;
+      return [...prev, conversation];
+    });
+  }, []);
+
+  const markConversationAsRead = useCallback(async (conversationId: string, senderId: string) => {
+    try {
+      await conversationService.markAsRead(conversationId, senderId);
+      // Update local state to reset unread count to 0
+      setConversations(prev => 
+        prev.map(conv => 
+          conv.id === conversationId 
+            ? { ...conv, unreadCount: 0 }
+            : conv
+        )
+      );
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
+    }
+  }, []);
+
   return {
     conversations,
     isLoadingConversations,
@@ -168,6 +222,7 @@ export const useChat = (): UseChatReturn => {
     isLoadingGroups,
     messages,
     loadConversations,
+    addConversation,
     loadGroups,
     loadMessages,
     addMessage,
@@ -175,8 +230,10 @@ export const useChat = (): UseChatReturn => {
     generateInviteLink,
     joinByInvite,
     addMemberToGroup,
+    markConversationAsRead,
     onGroupMemberEvent,
     onGroupEvent,
-    onMessagesEvent
+    onMessagesEvent,
+    onLastMessageEvent
   };
 };

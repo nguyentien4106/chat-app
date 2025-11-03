@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace ChatApp.Application.Behaviours;
 
@@ -8,8 +9,14 @@ public class LoggingBehaviour<TRequest, TResponse>(ILogger<TRequest> logger) : I
 {
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
+        var requestData = JsonSerializer.Serialize(request, new JsonSerializerOptions 
+        { 
+            WriteIndented = false,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+        
         logger.LogInformation("[START] Handle request={Request} - Response={Response} - RequestData={RequestData}",
-            typeof(TRequest).Name, typeof(TResponse).Name, request);
+            typeof(TRequest).Name, typeof(TResponse).Name, requestData);
 
         var timer = new Stopwatch();
 

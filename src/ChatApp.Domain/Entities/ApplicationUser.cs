@@ -13,6 +13,13 @@ public class ApplicationUser : IdentityUser<Guid>
 
     // Navigation Properties
     public ICollection<GroupMember> GroupMembers { get; set; } = [];
+    
+    // Conversations where this user is User1
+    public ICollection<Conversation> ConversationsAsSender { get; set; } = [];
+    
+    // Conversations where this user is User2
+    public ICollection<Conversation> ConversationsAsReceiver { get; set; } = [];
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     public string? UpdatedBy { get; set; }

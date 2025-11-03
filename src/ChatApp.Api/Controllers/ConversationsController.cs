@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using ChatApp.Api.Controllers.Base;
+using ChatApp.Application.Commands.Messages.MarkRead;
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Models;
 using ChatApp.Application.Queries.Groups.GetUserConversations;
@@ -22,11 +23,24 @@ public class ConversationsController(IMediator mediator) : AuthenticatedControll
         return Ok(response);
     }
 
-    // [HttpPost]
-    // public async Task<ActionResult<AppResponse<ConversationDto>>> StartConversation([FromBody] StartConversationCommand command)
-    // {
-    //     command.UserId = CurrentUserId;
-    //     var response = await mediator.Send(command);
-    //     return Ok(response);
-    // }
+    [HttpPost("{conversationId}/mark-read/{senderId}")]
+    public async Task<ActionResult<AppResponse<int>>> MarkRead(Guid conversationId, Guid senderId)
+    {
+        var command = new MarkReadCommand
+        {
+            ConversationId = conversationId,
+            SenderId = senderId,
+            CurrentUserId = CurrentUserId
+        };
+
+        var response = await mediator.Send(command);
+        return Ok(response);
+    }
+
+    [HttpGet("{conversationId}/messages")]
+    public async Task<ActionResult<AppResponse<PagedResult<List<MessageDto>>>>> GetConversationMessages(PaginationRequest request)
+    {
+        
+    }
+    
 }

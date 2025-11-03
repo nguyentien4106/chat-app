@@ -14,8 +14,8 @@ public class GetConversationMessagesHandler(
     {
         // Find the conversation between these two users
         var conversations = await conversationRepository.GetAllAsync(
-            filter: c => (c.User1Id == request.User1Id && c.User2Id == request.User2Id) ||
-                        (c.User1Id == request.User2Id && c.User2Id == request.User1Id),
+            filter: c => (c.SenderId == request.User1Id && c.ReceiverId == request.User2Id) ||
+                        (c.SenderId == request.User2Id && c.ReceiverId == request.User1Id),
             cancellationToken: cancellationToken);
 
         var conversation = conversations.FirstOrDefault();
@@ -29,7 +29,7 @@ public class GetConversationMessagesHandler(
         // Get messages for this conversation
         var messages = await messageRepository.GetAllAsync(
             filter: m => m.ConversationId == conversation.Id,
-            orderBy: query => query.OrderByDescending(m => m.CreatedAt),
+            orderBy: query => query.OrderBy(m => m.CreatedAt),
             includeProperties: ["Sender"],
             cancellationToken: cancellationToken);
 

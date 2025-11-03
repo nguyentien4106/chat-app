@@ -1,4 +1,5 @@
 ﻿using ChatApp.Application.Behaviours;
+using ChatApp.Application.Commands.Messages.SendMessage.Strategy;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using FluentValidation;
@@ -21,6 +22,10 @@ public static class DependencyInjectionExtensions
             cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
         });
 
+        // Register SendMessage strategies
+        services.AddScoped<ISendMessageStrategy, GroupMessageStrategy>();
+        services.AddScoped<ISendMessageStrategy, ConversationMessageStrategy>();
+        services.AddScoped<SendMessageStrategyContext>();
     }
 
 }

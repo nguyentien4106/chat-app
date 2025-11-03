@@ -8,6 +8,7 @@ import { useChatContext } from "@/contexts/ChatContext";
 export const MessageInput: React.FC = () => {
   const {
   messageInput,
+  messageInputRef,
   isConnected,
   isUploading,
   selectedFile,
@@ -42,6 +43,7 @@ const hasSelectedFile = !!selectedFile;
         </Button>
 
         <Input
+          ref={messageInputRef}
           value={messageInput}
           onChange={(e) => setMessageInput(e.target.value)}
           onKeyDown={handleKeyDown}

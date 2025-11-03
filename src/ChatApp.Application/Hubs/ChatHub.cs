@@ -66,7 +66,7 @@ public class ChatHub : Hub
             {
                 foreach (var conversation in userConversationsResponse.Data)
                 {
-                    await Groups.AddToGroupAsync(Context.ConnectionId, conversation.ConversationId.ToString());
+                    await Groups.AddToGroupAsync(Context.ConnectionId, conversation.Id.ToString());
                 }
             }
         }

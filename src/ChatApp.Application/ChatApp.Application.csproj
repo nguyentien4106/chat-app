@@ -29,4 +29,8 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Commands\Messages\SendMessage\Strategy\" />
+  </ItemGroup>
+
 </Project>

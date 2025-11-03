@@ -17,8 +17,9 @@ export enum MessageType {
 export interface Message {
   id: string | number;
   senderId: string;
-  senderUsername?: string;
+  senderUserName?: string;
   receiverId?: string;
+  conversationId?: string;
   groupId?: string;
   content?: string;
   messageType: MessageType;
@@ -28,12 +29,13 @@ export interface Message {
   fileSize?: number;
   createdAt: Date;
   isRead: boolean;
+  groupName: string
 }
 
 export interface Conversation {
-  conversationId: string;
+  id: string | undefined;
   userId: string;
-  username: string;
+  userName: string;
   lastMessage: string;
   lastMessageAt?: Date;
   unreadCount: number;

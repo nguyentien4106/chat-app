@@ -24,7 +24,7 @@ public class GetGroupMessagesHandler(IRepository<Message> messageRepository)
                 Id = m.Id,
                 Content = m.Content,
                 SenderId = m.SenderId,
-                SenderUsername = m.Sender.UserName,
+                SenderUserName = m.Sender.UserName,
                 GroupId = m.GroupId,
                 CreatedAt = m.CreatedAt,
                 IsRead = m.IsRead,

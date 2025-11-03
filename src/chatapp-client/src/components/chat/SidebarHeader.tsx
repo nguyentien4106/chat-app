@@ -1,12 +1,10 @@
 import React from "react";
 import { JWT_CLAIMS } from "@/constants/jwtClaims";
+import { useChatContext } from "@/contexts/ChatContext";
 
-interface SidebarHeaderProps {
-  user: any;
-  isConnected: boolean;
-}
+export const SidebarHeader: React.FC = () => {
+  const { user, isConnected } = useChatContext();
 
-export const SidebarHeader: React.FC<SidebarHeaderProps> = ({ user, isConnected }) => {
   return (
     <div className="p-4 border-b">
       <h1 className="text-xl font-bold">Chat App</h1>

@@ -8,6 +8,8 @@ namespace ChatApp.Application.Queries.Groups.GetUserConversations;
 
 public class GetUserConversationsHandler(
     IRepository<Conversation> conversationRepository,
+    IRepository<Message> messageRepository,
+    IUserRepository userRepository,
     IChatAppDbContext _context
 ) : IRequestHandler<GetUserConversationsQuery, AppResponse<List<ConversationDto>>>
 {
@@ -16,7 +18,7 @@ public class GetUserConversationsHandler(
     {
         // Get all conversations where the user is a participant
         var userConversations = await conversationRepository.GetAllAsync(
-            filter: c => c.User1Id == request.UserId || c.User2Id == request.UserId,
+            filter: c => c.SenderId == request.UserId || c.ReceiverId == request.UserId,
             includeProperties: ["Messages"],
             cancellationToken: cancellationToken);
 
@@ -24,7 +26,7 @@ public class GetUserConversationsHandler(
         foreach (var conv in userConversations)
         {
             var otherUserId = conv.GetOtherUserId(request.UserId);
-            var otherUser = await _context.Users.FindAsync(otherUserId, cancellationToken);
+            var otherUser = await userRepository.GetByIdAsync(otherUserId, cancellationToken: cancellationToken);
             if (otherUser == null) continue;
 
             var lastMessage = conv.Messages.OrderByDescending(m => m.CreatedAt).FirstOrDefault();
@@ -32,9 +34,9 @@ public class GetUserConversationsHandler(
 
             result.Add(new ConversationDto
             {
-                ConversationId = conv.Id,
+                Id = conv.Id,
                 UserId = otherUserId,
-                Username = otherUser.UserName ?? string.Empty,
+                UserName = otherUser.UserName ?? string.Empty,
                 LastMessage = lastMessage.Content ?? string.Empty,
                 LastMessageAt = conv.LastMessageAt,
                 UnreadCount = conv.Messages.Count(m => m.SenderId == otherUserId && !m.IsRead)
