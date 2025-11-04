@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using ChatApp.Application.Commands.Messages.SendMessage;
 using ChatApp.Application.DTOs.Common;
+using ChatApp.Application.Queries.Conversations.GetUserConversations;
 using ChatApp.Application.Queries.Groups.GetUserGroups;
-using ChatApp.Application.Queries.Groups.GetUserConversations;
 using ChatApp.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -17,10 +17,11 @@ namespace ChatApp.Application.Hubs;
 public class ChatHub : Hub
 {
     private readonly IMediator _mediator;
-
-    public ChatHub(IMediator mediator)
+    private readonly IRepository<Conversation> _conversationRepository;
+    public ChatHub(IMediator mediator, IRepository<Conversation> conversationRepository)
     {
         _mediator = mediator;
+        _conversationRepository = conversationRepository;
     }
 
     private string? GetUserId()
@@ -61,13 +62,13 @@ public class ChatHub : Hub
             }
 
             // Join user to all their conversations
-            var userConversationsResponse = await _mediator.Send(new GetUserConversationsQuery { UserId = Guid.Parse(userId) });
-            if (userConversationsResponse.IsSuccess && userConversationsResponse.Data != null)
+            var conversations = await _conversationRepository.GetAllAsync(c =>
+                c.SenderId == Guid.Parse(userId) || c.ReceiverId == Guid.Parse(userId)
+            );
+            
+            foreach (var conversation in conversations)
             {
-                foreach (var conversation in userConversationsResponse.Data)
-                {
-                    await Groups.AddToGroupAsync(Context.ConnectionId, conversation.Id.ToString());
-                }
+                await Groups.AddToGroupAsync(Context.ConnectionId, conversation.Id.ToString());
             }
         }
 

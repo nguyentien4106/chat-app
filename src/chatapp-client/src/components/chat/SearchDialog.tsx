@@ -11,16 +11,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Search, Loader2 } from "lucide-react";
-import { UserDto } from "@/types/chat.types";
+import { User } from "@/types/chat.types";
 
 interface SearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   searchTerm: string;
-  searchResults: UserDto[];
+  searchResults: User[];
   isSearching: boolean;
   onSearchChange: (value: string) => void;
-  onUserClick: (user: UserDto) => void;
+  onUserClick: (user: User) => void;
 }
 
 export const SearchDialog: React.FC<SearchDialogProps> = ({
@@ -81,7 +81,7 @@ export const SearchDialog: React.FC<SearchDialogProps> = ({
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <p className="font-medium">{user.userName}</p>
+                        <p className="font-medium">{user.firstName} {user.lastName}</p>
                         <p className="text-sm text-gray-500">{user.email}</p>
                       </div>
                     </div>

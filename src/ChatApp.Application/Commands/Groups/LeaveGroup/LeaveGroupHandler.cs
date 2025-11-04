@@ -45,7 +45,7 @@ public class LeaveGroupHandler(
             MessageType = MessageTypes.Notification,
             SenderId = request.UserId,
             GroupId = request.GroupId,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.Now,
             IsRead = false
         };
 

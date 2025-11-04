@@ -7,7 +7,7 @@ import { useChatHandlers } from '@/hooks/useChatHandlers';
 import { useSignalREvents } from '@/hooks/useSignalREvents';
 import { useAutoScroll } from '@/hooks/useAutoScroll';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserDto, ActiveChat, Conversation, Message } from '@/types/chat.types';
+import { ActiveChat, Conversation, Message, User } from '@/types/chat.types';
 import { JWT_CLAIMS } from '@/constants/jwtClaims';
 
 interface ChatContextType {
@@ -34,6 +34,8 @@ interface ChatContextType {
   // Conversations & Groups
   conversations: Conversation[];
   isLoadingConversations: boolean;
+  hasMoreConversations: boolean;
+  loadMoreConversations: () => Promise<void>;
   groups: any[];
   isLoadingGroups: boolean;
 
@@ -45,7 +47,7 @@ interface ChatContextType {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   
   // User Search
-  searchResults: UserDto[];
+  searchResults: User[];
   isSearching: boolean;
   
   // Handlers
@@ -57,7 +59,7 @@ interface ChatContextType {
   handleGenerateInvite: (groupId: string) => Promise<string>;
   handleJoinByInvite: (code: string) => Promise<void>;
   handleAddMember: (groupId: string, userName: string) => Promise<void>;
-  handleStartChat: (user: UserDto) => Promise<void>;
+  handleStartChat: (user: User) => Promise<void>;
   handleImageSelect: () => void;
   handleFileButtonSelect: () => void;
   handleClearFile: () => void;
@@ -103,7 +105,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       chat.loadConversations();
       chat.loadGroups();
     }
-  }, [signalR.isConnected, chat.loadConversations, chat.loadGroups]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signalR.isConnected]);
 
   // SignalR events
   useSignalREvents({
@@ -143,6 +146,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     markConversationAsRead: chat.markConversationAsRead,
     joinGroup: signalR.joinGroup,
     addConversation: chat.addConversation,
+    clearMessages: chat.clearMessages,
   });
 
   // File handlers
@@ -184,6 +188,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Conversations & Groups
     conversations: chat.conversations,
     isLoadingConversations: chat.isLoadingConversations,
+    hasMoreConversations: chat.hasMoreConversations,
+    loadMoreConversations: async () => await chat.loadConversations(true),
     groups: chat.groups,
     isLoadingGroups: chat.isLoadingGroups,
     

@@ -3,8 +3,10 @@
 export interface User {
   id: string;
   name: string;
-  email?: string;
-  username?: string;
+  email: string;
+  userName: string;
+  firstName: string;
+  lastName: string;
 }
 
 export enum MessageType {
@@ -36,9 +38,11 @@ export interface Conversation {
   id: string | undefined;
   userId: string;
   userName: string;
+  userFullName: string;
   lastMessage: string;
   lastMessageAt?: Date;
   unreadCount: number;
+  isLastMessageMine?: boolean;
 }
 
 export interface Group {
@@ -71,6 +75,7 @@ export interface GroupInfo {
 export interface ActiveChat {
   id: string;
   name: string;
+  userFullName: string;
   type: 'user' | 'group';
   conversationId?: string; // For direct messages - null when starting a new chat
   receiverId?: string; // For direct messages - the other user's ID
@@ -130,12 +135,4 @@ export interface AuthResponse {
   userId: string;
   userName: string;
   email: string;
-}
-
-// src/types/chat.types.ts - Add to existing file
-export interface UserDto {
-  id: string;
-  userName: string;
-  email: string;
-  isAdmin: boolean;
 }

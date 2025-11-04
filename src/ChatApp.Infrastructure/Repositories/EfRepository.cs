@@ -230,6 +230,42 @@ public class EfRepository<TEntity>(
         }
     }
 
+    public override async Task<bool> UpdateRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
+    {
+        var entitiesList = entities?.ToList();
+        if (entitiesList == null || !entitiesList.Any())
+        {
+            logger.LogWarning("Attempted to update empty or null collection of entities of type {EntityType}", typeof(TEntity).Name);
+            return false;
+        }
+
+        try
+        {
+            dbSet.UpdateRange(entitiesList);
+            var result = await context.SaveChangesAsync(cancellationToken) > 0;
+            
+            if (result)
+            {
+                logger.LogInformation("Successfully updated {Count} entities of type {EntityType}", 
+                    entitiesList.Count, typeof(TEntity).Name);
+            }
+            else
+            {
+                logger.LogWarning("Update operation for {Count} entities of type {EntityType} returned false",
+                    entitiesList.Count, typeof(TEntity).Name);
+            }
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error updating {Count} entities of type {EntityType}", 
+                entitiesList.Count, typeof(TEntity).Name);
+            
+            throw;
+        }
+    }
+
     public override async Task<bool> DeleteAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
         if (entity == null)

@@ -31,6 +31,8 @@ public interface IRepository<TEntity>
 
     Task<bool> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default);
 
+    Task<bool> UpdateRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default);
+
     Task<bool> DeleteAsync(TEntity entity, CancellationToken cancellationToken = default);
 
     Task<bool> DeleteByIdAsync(Guid id, CancellationToken cancellationToken = default);

@@ -32,6 +32,8 @@ public abstract class Repository<TEntity> : IRepository<TEntity> where TEntity :
 
     public abstract Task<bool> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default);
 
+    public abstract Task<bool> UpdateRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default);
+
     public abstract Task<bool> DeleteAsync(TEntity entity, CancellationToken cancellationToken = default);
 
     public abstract Task<bool> DeleteByIdAsync(Guid id, CancellationToken cancellationToken = default);

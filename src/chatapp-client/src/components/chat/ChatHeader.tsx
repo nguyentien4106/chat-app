@@ -3,12 +3,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Info } from "lucide-react";
 import { GroupInfoDialog } from "./GroupInfoDialog";
-
-interface ActiveChat {
-  id: string;
-  name: string;
-  type: "user" | "group";
-}
+import { ActiveChat } from "@/types/chat.types";
 
 interface ChatHeaderProps {
   activeChat: ActiveChat;
@@ -22,14 +17,21 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({ activeChat }) => {
       <div className="bg-white border-b p-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Avatar>
-              <AvatarFallback>
-                {activeChat.name[0].toUpperCase()}
+            <Avatar className="h-10 w-10">
+              <AvatarFallback className="bg-blue-500 text-white">
+                {activeChat.userFullName ? activeChat.userFullName[0].toUpperCase() : activeChat.name[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <h2 className="font-semibold">{activeChat.name}</h2>
-              <p className="text-sm text-gray-500">
+            <div className="flex flex-col">
+              <h2 className="font-semibold text-gray-900 leading-tight">
+                {activeChat.userFullName || activeChat.name}
+              </h2>
+              {activeChat.userFullName && activeChat.name && (
+                <p className="text-xs text-gray-500 leading-tight">
+                  @{activeChat.name}
+                </p>
+              )}
+              <p className="text-xs text-gray-400 mt-0.5">
                 {activeChat.type === "group" ? "Group Chat" : "Direct Message"}
               </p>
             </div>

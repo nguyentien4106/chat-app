@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
-import { SendMessageRequest, UserDto, Message, MessageType, ActiveChat, Conversation } from '@/types/chat.types';
+import { SendMessageRequest, Message, MessageType, ActiveChat, Conversation, User } from '@/types/chat.types';
 
 interface UseChatHandlersProps {
   activeChat: ActiveChat | null;
@@ -22,6 +22,7 @@ interface UseChatHandlersProps {
   markConversationAsRead: (conversationId: string, senderId: string) => Promise<void>;
   joinGroup: (groupId: string) => Promise<void>;
   addConversation: (conversation: Conversation) => void;
+  clearMessages: () => void;
 }
 
 export const useChatHandlers = ({
@@ -44,11 +45,17 @@ export const useChatHandlers = ({
   markConversationAsRead,
   joinGroup,
   addConversation,
+  clearMessages,
 }: UseChatHandlersProps) => {
   
   const handleChatSelect = useCallback(async (chat: ActiveChat) => {
     setActiveChat(chat);
-    await loadMessages(chat.id, chat.type);
+    if(chat.id){
+        await loadMessages(chat.id, chat.type);
+    }
+    else {
+      
+    }
     
     if (chat.type === 'group') {
       await joinGroup(chat.id);
@@ -147,13 +154,14 @@ export const useChatHandlers = ({
     }
   }, [handleSendMessage]);
 
-  const handleStartChat = useCallback(async (user: UserDto) => {
+  const handleStartChat = useCallback(async (user: User) => {
     setActiveChat({ 
       id: user.id, 
       name: user.userName, 
       type: 'user',
       conversationId: undefined,
-      receiverId: user.id
+      receiverId: user.id,
+      userFullName: user.firstName + ' ' + user.lastName
     });
 
     const newConv: Conversation = {
@@ -162,10 +170,12 @@ export const useChatHandlers = ({
       userName: user.userName,
       lastMessage: '',
       unreadCount: 0,
+      userFullName: user.firstName + ' ' + user.lastName,
     };
 
     addConversation(newConv);
-    await loadMessages(user.id, 'user');
+    clearMessages();
+    //await loadMessages(user.id, 'user');
   }, [setActiveChat, addConversation, loadMessages]);
 
   const handleMarkAsRead = useCallback(async (conversationId: string, senderId: string) => {

@@ -33,9 +33,6 @@ public class ConversationMessageStrategy(
             message.Id, 
             includeProperties: ["Sender"],
             cancellationToken: cancellationToken) ?? message;
-        
-        logger.LogInformation("Conversation message sent: {MessageId} from user: {SenderId} to conversation: {ConversationId}", 
-            message.Id, command.SenderId, conversation.Id);
 
         var messageDto = message.Adapt<MessageDto>();
         messageDto.ReceiverId = command.ReceiverId ?? Guid.Empty;
@@ -95,7 +92,7 @@ public class ConversationMessageStrategy(
             {
                 SenderId = senderId,
                 ReceiverId = receiverId,
-                LastMessageAt = DateTime.UtcNow
+                LastMessageAt = DateTime.Now
             };
             await conversationRepository.AddAsync(conversation, cancellationToken);
         }

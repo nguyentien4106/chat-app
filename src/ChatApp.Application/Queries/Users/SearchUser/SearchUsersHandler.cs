@@ -19,16 +19,10 @@ public class SearchUsersHandler(
                          (u.Email != null && u.Email.Contains(request.SearchTerm))),
             cancellationToken: cancellationToken);
         
-        var userDtos = users
+        var limitedUsers = users
             .Take(20)
-            .Select(u => new UserDto
-            {
-                Id = u.Id,
-                UserName = u.UserName ?? "",
-                Email = u.Email ?? ""
-            })
             .ToList();
 
-        return AppResponse<List<UserDto>>.Success(userDtos);
+        return AppResponse<List<UserDto>>.Success(limitedUsers.Adapt<List<UserDto>>());
     }
 }

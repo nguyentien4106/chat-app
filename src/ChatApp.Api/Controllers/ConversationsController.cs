@@ -4,7 +4,7 @@ using ChatApp.Application.Commands.Messages.MarkRead;
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Models;
 using ChatApp.Application.Queries.Conversations.GetMessagesByConversationId;
-using ChatApp.Application.Queries.Groups.GetUserConversations;
+using ChatApp.Application.Queries.Conversations.GetUserConversations;
 using Microsoft.AspNetCore.Authorization;
 
 namespace ChatApp.Api.Controllers;
@@ -17,20 +17,26 @@ namespace ChatApp.Api.Controllers;
 public class ConversationsController(IMediator mediator) : AuthenticatedControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<AppResponse<List<ConversationDto>>>> GetUserConversations()
+    public async Task<ActionResult<AppResponse<PagedResult<ConversationDto>>>> GetUserConversations([FromQuery] PaginationRequest request)
     {
-        var query = new GetUserConversationsQuery { UserId = CurrentUserId };
+        var query = new GetUserConversationsQuery 
+        { 
+            UserId = CurrentUserId,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize,
+            SortBy = request.SortBy,
+            SortOrder = request.SortOrder
+        };
         var response = await mediator.Send(query);
         return Ok(response);
     }
 
-    [HttpPost("{conversationId}/mark-read/{senderId}")]
-    public async Task<ActionResult<AppResponse<int>>> MarkRead(Guid conversationId, Guid senderId)
+    [HttpPost("{conversationId}/mark-read")]
+    public async Task<ActionResult<AppResponse<int>>> MarkRead(Guid conversationId)
     {
         var command = new MarkReadCommand
         {
             ConversationId = conversationId,
-            SenderId = senderId,
             CurrentUserId = CurrentUserId
         };
 

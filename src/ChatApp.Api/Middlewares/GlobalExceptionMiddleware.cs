@@ -11,7 +11,7 @@ public class GlobalExceptionMiddleware(ILogger<GlobalExceptionMiddleware> logger
     {
         logger.LogError(
             "Error Message: {exceptionMessage}, Time of occurrence {time}",
-            exception.Message, DateTime.UtcNow);
+            exception.Message, DateTime.Now);
 
         var details = exception switch
         {

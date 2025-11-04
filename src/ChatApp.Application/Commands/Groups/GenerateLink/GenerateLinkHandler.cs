@@ -22,7 +22,7 @@ public class GenerateLinkHandler(
             return AppResponse<string>.Fail("Only admins can generate invite links");
 
         group.InviteCode = Guid.NewGuid().ToString("N").Substring(0, 8);
-        group.InviteCodeExpiresAt = DateTime.UtcNow.AddDays(7);
+        group.InviteCodeExpiresAt = DateTime.Now.AddDays(7);
 
         await groupRepository.UpdateAsync(group, cancellationToken: cancellationToken);
 

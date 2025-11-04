@@ -55,7 +55,7 @@ public class RemoveMemberFromGroupHandler(
             MessageType = MessageTypes.Notification,
             SenderId = request.RemovedById,
             GroupId = request.GroupId,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.Now,
             IsRead = false
         };
 

@@ -8,7 +8,7 @@ import { SearchDialog } from "./SearchDialog";
 import { ConversationsList } from "./ConversationsList";
 import { GroupActions } from "./GroupActions";
 import { GroupsList } from "./GroupsList";
-import { UserDto } from "@/types/chat.types";
+import { User } from "@/types/chat.types";
 
 export const ChatSidebar: React.FC = () => {
   const { isOpen } = useSidebar();
@@ -18,6 +18,8 @@ export const ChatSidebar: React.FC = () => {
     handleSearchUsers,
     handleClearSearch,
     handleStartChat,
+    conversations,
+    handleChatSelect
   } = useChatContext();
   
   // Local state for search dialog
@@ -33,11 +35,29 @@ export const ChatSidebar: React.FC = () => {
     }
   };
 
-  const handleUserClick = (user: UserDto) => {
-    handleStartChat(user);
+  const closeSearch = () => {
     setShowSearch(false);
     setSearchTerm("");
     handleClearSearch();
+  };
+
+  const handleUserClick = (user: User) => {
+    const existingConversation = conversations.find(c => c.userId === user.id);
+    
+    if (existingConversation) {
+      handleChatSelect({
+        id: existingConversation.id ?? "",
+        type: 'user',
+        conversationId: existingConversation.id,
+        receiverId: existingConversation.userId,
+        name: existingConversation.userName,
+        userFullName: existingConversation.userFullName
+      });
+    } else {
+      handleStartChat(user);
+    }
+    
+    closeSearch();
   };
 
   if (!isOpen) return null;

@@ -1,6 +1,6 @@
 
 // src/hooks/useChat.ts
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, use } from 'react';
 import type { Conversation, Group, Message } from '@/types/chat.types';
 import { conversationService } from '@/services/conversationService';
 import { groupService } from '@/services/groupService';
@@ -12,6 +12,7 @@ import { defaultPaginationRequest } from '@/constants';
 interface UseChatReturn {
   conversations: Conversation[];
   isLoadingConversations: boolean;
+  hasMoreConversations: boolean;
 
   groups: Group[];
   isLoadingGroups: boolean;
@@ -21,11 +22,12 @@ interface UseChatReturn {
   isLoadingMessages: boolean;
   hasMoreMessages: boolean;
   
-  loadConversations: () => Promise<void>;
+  loadConversations: (loadMore?: boolean) => Promise<void>;
   addConversation: (conversation: Conversation) => void;
   loadGroups: () => Promise<void>;
   loadMessages: (chatId: string, type: 'user' | 'group', loadMore?: boolean) => Promise<void>;
   addMessage: (message: Message) => void;
+  clearMessages: () => void;
   createGroup: (name: string, description?: string) => Promise<void>;
   generateInviteLink: (groupId: string) => Promise<string>;
   joinByInvite: (inviteCode: string) => Promise<void>;
@@ -41,7 +43,17 @@ interface UseChatReturn {
 
 export const useChat = (): UseChatReturn => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [isLoadingConversations, setIsLoadingConversations] = useState<boolean>(true);
+  const [isLoadingConversations, setIsLoadingConversations] = useState<boolean>(false);
+  const isLoadingConversationsRef = useRef<boolean>(false);
+  const conversationsPaginationRef = useRef<PaginationRequest>({
+    ...defaultPaginationRequest,
+    pageSize: 10,
+    sortBy: 'LastMessageAt',
+    sortOrder: 'desc'
+  });
+  const [hasMoreConversations, setHasMoreConversations] = useState<boolean>(false);
+  const hasMoreConversationsRef = useRef<boolean>(false);
+  
   const [isLoadingGroups, setIsLoadingGroups] = useState<boolean>(true);
   const [groups, setGroups] = useState<Group[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -50,16 +62,48 @@ export const useChat = (): UseChatReturn => {
   const [isLoadingMessages, setIsLoadingMessages] = useState<boolean>(false);
   const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(false);
 
-  const loadConversations = useCallback(async () => {
-    setIsLoadingConversations(true);
+  const loadConversations = useCallback(async (loadMore: boolean = false) => {
     try {
-      const result = await conversationService.getUserConversations();
-      setIsLoadingConversations(false);
-      setConversations(result);
+      // Prevent loading more if already loading or no more conversations
+      if (loadMore && (isLoadingConversationsRef.current || !hasMoreConversationsRef.current)) {
+        return;
+      }
+
+      isLoadingConversationsRef.current = true;
+      setIsLoadingConversations(true);
+
+      // Determine pagination
+      const pagination = loadMore
+        ? { ...conversationsPaginationRef.current, pageNumber: conversationsPaginationRef.current.pageNumber + 1 }
+        : { ...conversationsPaginationRef.current, pageNumber: 1 };
+
+      const result = await conversationService.getUserConversations(pagination);
+      
+      if (!result || result.items.length === 0) {
+        if (!loadMore) {
+          setConversations([]);
+        }
+        hasMoreConversationsRef.current = false;
+        setHasMoreConversations(false);
+        return;
+      }
+
+      // Update conversations
+      if (loadMore) {
+        setConversations(prev => [...prev, ...result.items]);
+      } else {
+        setConversations(result.items);
+      }
+
+      // Update pagination state
+      conversationsPaginationRef.current = pagination;
+      hasMoreConversationsRef.current = result.hasNextPage;
+      setHasMoreConversations(result.hasNextPage);
+      
     } catch (error) {
       console.error('Error loading conversations:', error);
-    }
-    finally {
+    } finally {
+      isLoadingConversationsRef.current = false;
       setIsLoadingConversations(false);
     }
   }, []);
@@ -110,11 +154,9 @@ export const useChat = (): UseChatReturn => {
         
         if (loadMore) {
           // Prepend older messages
-          console.log('Loading more messages:', result.items.length);
           setMessages(prev => [...chronologicalMessages, ...prev]);
         } else {
           // Initial load: replace all messages
-          console.log('Loading initial messages:', result.items.length);
           setMessages(chronologicalMessages);
         }
         
@@ -213,7 +255,6 @@ export const useChat = (): UseChatReturn => {
   }, [addMessage]);
 
   const onLastMessageEvent = useCallback((message: Message) => {
-    console.log('Updating conversations/groups with new message', message);
     if(message.conversationId){
       setConversations(prev => {
         return prev.map(conv => {
@@ -243,13 +284,19 @@ export const useChat = (): UseChatReturn => {
     setConversations(prev => {
       const exists = prev.some(c => c.id === conversation.id);
       if (exists) return prev;
-      return [...prev, conversation];
+      return [ conversation, ...prev ];
     });
   }, []);
 
-  const markConversationAsRead = useCallback(async (conversationId: string, senderId: string) => {
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+    setMessagesPagination(defaultPaginationRequest);
+    setHasMoreMessages(false);
+  }, []);
+
+  const markConversationAsRead = useCallback(async (conversationId: string) => {
     try {
-      await conversationService.markAsRead(conversationId, senderId);
+      await conversationService.markAsRead(conversationId);
       // Update local state to reset unread count to 0
       setConversations(prev => 
         prev.map(conv => 
@@ -266,6 +313,7 @@ export const useChat = (): UseChatReturn => {
   return {
     conversations,
     isLoadingConversations,
+    hasMoreConversations,
     groups,
     isLoadingGroups,
     messages,
@@ -277,6 +325,7 @@ export const useChat = (): UseChatReturn => {
     loadGroups,
     loadMessages,
     addMessage,
+    clearMessages,
     createGroup,
     generateInviteLink,
     joinByInvite,

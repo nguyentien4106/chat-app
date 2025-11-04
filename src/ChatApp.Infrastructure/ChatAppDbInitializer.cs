@@ -104,7 +104,7 @@ public class ChatAppDbInitializer(
             TwoFactorEnabled = false,
             LockoutEnabled = false,
             AccessFailedCount = 0,
-            Created = DateTime.UtcNow,
+            Created = DateTime.Now,
             CreatedBy = "System"
         };
 
@@ -128,7 +128,7 @@ public class ChatAppDbInitializer(
     private async Task SeedNormalUsersAsync()
     {
         var normalUsers = new List<ApplicationUser>();
-        var userNumber = 10;
+        var userNumber = 100;
         for (int i = 1; i <= userNumber; i++)
         {
             normalUsers.Add(new ApplicationUser
@@ -143,7 +143,7 @@ public class ChatAppDbInitializer(
                 TwoFactorEnabled = true,
                 LockoutEnabled = true,
                 AccessFailedCount = 0,
-                Created = DateTime.UtcNow,
+                Created = DateTime.Now,
                 CreatedBy = "System"
             });
         }

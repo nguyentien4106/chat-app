@@ -19,7 +19,7 @@ public class JoinGroupHandler(
         {
             return AppResponse<Unit>.Fail("Group not found");
         }
-        if (group.InviteCodeExpiresAt < DateTime.UtcNow)
+        if (group.InviteCodeExpiresAt < DateTime.Now)
         {
             return AppResponse<Unit>.Fail("Expired invite code");
         }
@@ -38,7 +38,7 @@ public class JoinGroupHandler(
             Id = Guid.NewGuid(),
             GroupId = group.Id,
             UserId = request.UserId,
-            JoinedAt = DateTime.UtcNow,
+            JoinedAt = DateTime.Now,
             IsAdmin = false
         };
 
@@ -52,7 +52,7 @@ public class JoinGroupHandler(
             MessageType = MessageTypes.Notification,
             SenderId = request.UserId,
             GroupId = group.Id,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.Now,
             IsRead = false
         };
 

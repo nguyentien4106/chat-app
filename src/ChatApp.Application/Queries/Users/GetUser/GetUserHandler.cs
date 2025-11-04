@@ -16,7 +16,9 @@ public class GetUserHandler(IUserRepository userRepository)
             {
                 Id = user.Id,
                 UserName = user.UserName ?? "",
-                Email = user.Email ?? ""
+                Email = user.Email ?? "",
+                LastName = user.LastName ?? "",
+                FirstName = user.FirstName ?? "",
             };
 
             return AppResponse<UserDto>.Success(userDto);

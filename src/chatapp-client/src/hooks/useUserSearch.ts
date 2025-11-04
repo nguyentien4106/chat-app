@@ -1,10 +1,10 @@
 // src/hooks/useUserSearch.ts
 import { useState, useCallback } from 'react';
 import { userService } from '@/services/userService';
-import type { UserDto } from '@/types/chat.types';
+import { User } from '@/types/chat.types';
 
 export const useUserSearch = () => {
-  const [users, setUsers] = useState<UserDto[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   const searchUsers = useCallback(async (searchTerm: string) => {
@@ -16,7 +16,6 @@ export const useUserSearch = () => {
     setIsSearching(true);
     try {
       const result = await userService.searchUsers(searchTerm);
-      console.log("User search response:", result);
       setUsers(result);
     } catch (error) {
       console.error('Error searching users:', error);
