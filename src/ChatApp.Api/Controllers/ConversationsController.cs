@@ -3,6 +3,7 @@ using ChatApp.Api.Controllers.Base;
 using ChatApp.Application.Commands.Messages.MarkRead;
 using ChatApp.Application.DTOs.Common;
 using ChatApp.Application.Models;
+using ChatApp.Application.Queries.Conversations.GetMessagesByConversationId;
 using ChatApp.Application.Queries.Groups.GetUserConversations;
 using Microsoft.AspNetCore.Authorization;
 
@@ -38,9 +39,22 @@ public class ConversationsController(IMediator mediator) : AuthenticatedControll
     }
 
     [HttpGet("{conversationId}/messages")]
-    public async Task<ActionResult<AppResponse<PagedResult<List<MessageDto>>>>> GetConversationMessages(PaginationRequest request)
+    public async Task<ActionResult<AppResponse<PagedResult<MessageDto>>>> GetConversationMessages(
+        Guid conversationId,
+        [FromQuery] PaginationRequest request)
     {
-        
+        var query = new GetMessagesByConversationIdQuery
+        {
+            ConversationId = conversationId,
+            CurrentUserId = CurrentUserId,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize,
+            SortBy = request.SortBy,
+            SortOrder = request.SortOrder
+        };
+
+        var response = await mediator.Send(query);
+        return Ok(response);
     }
     
 }

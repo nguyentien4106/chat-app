@@ -1,11 +1,13 @@
-import React, { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react';
-import { toast } from 'sonner';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { useSignalR } from '@/hooks/useSignalR';
 import { useChat } from '@/hooks/useChat';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUserSearch } from '@/hooks/useUserSearch';
+import { useChatHandlers } from '@/hooks/useChatHandlers';
+import { useSignalREvents } from '@/hooks/useSignalREvents';
+import { useAutoScroll } from '@/hooks/useAutoScroll';
 import { useAuth } from '@/contexts/AuthContext';
-import { SendMessageRequest, UserDto, Message, MessageType, ActiveChat, Conversation } from '@/types/chat.types';
+import { UserDto, ActiveChat, Conversation, Message } from '@/types/chat.types';
 import { JWT_CLAIMS } from '@/constants/jwtClaims';
 
 interface ChatContextType {
@@ -26,6 +28,8 @@ interface ChatContextType {
   setMessageInput: (input: string) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   messageInputRef: React.RefObject<HTMLInputElement | null>;
+  isLoadingMessages: boolean;
+  hasMoreMessages: boolean;
   
   // Conversations & Groups
   conversations: Conversation[];
@@ -60,6 +64,7 @@ interface ChatContextType {
   handleSearchUsers: (query: string) => void;
   handleClearSearch: () => void;
   handleMarkAsRead: (conversationId: string, senderId: string) => Promise<void>;
+  handleLoadMoreMessages: () => Promise<void>;
 
   // Events
 }
@@ -71,322 +76,89 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { user } = useAuth();
   const currentUserId = user?.[JWT_CLAIMS.NAME_IDENTIFIER];
   
-  // Custom hooks
-  const {
-    connection,
-    isConnected,
-    sendMessage: sendSignalRMessage,
-    joinGroup,
-    onReceiveMessage,
-    onMemberAdded,
-    onMemberRemoved,
-    onMemberLeft,
-  } = useSignalR();
-  
-  const {
-    conversations,
-    isLoadingConversations,
-    groups,
-    isLoadingGroups,
-    messages,
-    loadConversations,
-    addConversation,
-    loadGroups,
-    loadMessages,
-    addMessage,
-    createGroup,
-    generateInviteLink,
-    joinByInvite,
-    addMemberToGroup,
-    markConversationAsRead,
-    onGroupMemberEvent,
-    onGroupEvent,
-    onMessagesEvent,
-    onLastMessageEvent
-  } = useChat();
-  
-  const {
-    isUploading,
-    selectedFile,
-    previewUrl,
-    selectFile,
-    clearSelection,
-    uploadFile,
-  } = useFileUpload();
-  
-  const {
-    users: searchResults,
-    isSearching,
-    searchUsers,
-    clearSearch,
-  } = useUserSearch();
-  
   // Local state
   const [activeChat, setActiveChat] = useState<ActiveChat | null>(null);
   const [messageInput, setMessageInput] = useState<string>('');
   
   // Refs
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
   
+  // Custom hooks
+  const signalR = useSignalR();
+  const chat = useChat();
+  const fileUpload = useFileUpload();
+  const userSearch = useUserSearch();
+  
+  // Auto-scroll functionality
+  const { messagesEndRef } = useAutoScroll({
+    isLoadingMessages: chat.isLoadingMessages,
+    messages: chat.messages,
+  });
+  
   // Load initial data
   useEffect(() => {
-    if (isConnected) {
-      loadConversations();
-      loadGroups();
+    if (signalR.isConnected) {
+      chat.loadConversations();
+      chat.loadGroups();
     }
-  }, [isConnected, loadConversations, loadGroups]);
+  }, [signalR.isConnected, chat.loadConversations, chat.loadGroups]);
 
-  const isCurrentUser = useCallback((userId: string): boolean => {
-    return userId === currentUserId;
-  }, [currentUserId]);
-
-  const groupOpening = useCallback((groupId: string): boolean => {
-    return activeChat?.type === 'group' && activeChat.groupId === groupId;
-  }, [activeChat]);
-
-  const currentUserOpeningGroup = useCallback((groupId: string, userId: string): boolean => {
-    return isCurrentUser(userId) && groupOpening(groupId);
-  }, [isCurrentUser, groupOpening]);
-
-  const hasGroupNotification = useCallback((groupId: string): boolean => {
-    return groups.some(group => group.id === groupId);
-  }, [groups])
-
-  // SignalR message listener
-  useEffect(() => {
-    if (connection) {
-      onReceiveMessage((message) => {
-        if(message.receiverId === currentUserId) {
-          onLastMessageEvent && onLastMessageEvent(message);
-        }
-        
-        if (
-          activeChat &&
-          ((activeChat.type === 'user' &&
-            (message.receiverId === currentUserId)) ||
-            (activeChat.type === 'group' && message.groupId === activeChat.groupId))
-        ) {
-          onMessagesEvent(message);
-        }
-
-        // Show notification for direct messages
-        if(currentUserId && message.receiverId === currentUserId && message.senderId !== currentUserId) {
-          toast.info(message.senderUserName, {
-            description: message.content,
-            duration: 5000,
-          });
-        }
-        
-        // Show notification for group messages if user is in the group and not currently viewing it
-        if (message.groupId && message.senderId !== currentUserId && hasGroupNotification(message.groupId) && !groupOpening(message.groupId)) {
-          toast.info(`${message.groupName}`, {
-            description: `${message.senderUserName}: ${message.content}`,
-            duration: 5000,
-          });
-        }
-
-      });
-      
-      onMemberAdded((data) => {
-        // data.message 
-        onGroupMemberEvent({ groupId: data.groupId, event: 'memberAdded' });
-
-        if (groupOpening(data.groupId)) {
-          onMessagesEvent(data.message);
-        }
-
-        if (isCurrentUser(data.userId)) {
-          onGroupEvent({ groupId: data.groupId, event: 'createdGroup', group: data.group });
-          toast.success(`You are added to group ${data.group.name}`);
-        }
-
-      });
-
-      onMemberRemoved((data) => {
-        onGroupMemberEvent({ groupId: data.groupId, event: 'memberRemoved' });
-        if(groupOpening(data.groupId)) {
-          onMessagesEvent(data.message);
-        }
-
-        if(isCurrentUser(data.userId)) {
-          onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
-        }
-
-        if (currentUserOpeningGroup(data.groupId, data.userId)) {
-          setActiveChat(null);
-          toast.info('You have been removed from the group');
-        }
-
-      });
-
-      onMemberLeft((data) => {
-        onGroupMemberEvent({ groupId: data.groupId, event: 'memberRemoved' });
-
-        if(isCurrentUser(data.userId)) {
-          toast.info('You have left the group');
-          setActiveChat(null);
-        }
-
-        if (groupOpening(data.groupId)) {
-          onMessagesEvent(data.message);
-        }
-
-      });
-    }
-  }, [connection, activeChat, currentUserId, groups, hasGroupNotification, groupOpening, isCurrentUser, onMessagesEvent, onGroupMemberEvent, onGroupEvent]);
+  // SignalR events
+  useSignalREvents({
+    connection: signalR.connection,
+    activeChat,
+    setActiveChat,
+    currentUserId,
+    groups: chat.groups,
+    onMessagesEvent: chat.onMessagesEvent,
+    onLastMessageEvent: chat.onLastMessageEvent,
+    onGroupMemberEvent: chat.onGroupMemberEvent,
+    onGroupEvent: chat.onGroupEvent,
+    onReceiveMessage: signalR.onReceiveMessage,
+    onMemberAdded: signalR.onMemberAdded,
+    onMemberRemoved: signalR.onMemberRemoved,
+    onMemberLeft: signalR.onMemberLeft,
+  });
   
-  // Auto-scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-  
-  // Handlers
-  const handleChatSelect = async (chat: ActiveChat) => {
-    setActiveChat(chat);
-    await loadMessages(chat.id, chat.type);
-    
-    if (chat.type === 'group') {
-      await joinGroup(chat.id);
-    } else if (chat.type === 'user' && chat.conversationId) {
-      // Mark messages as read for direct conversations
-      await markConversationAsRead(chat.conversationId, chat.id);
-    }
-    
-    setTimeout(() => {
-      messageInputRef.current?.focus();
-    }, 100);
-  };
-  
+  // All handlers
+  const handlers = useChatHandlers({
+    activeChat,
+    setActiveChat,
+    messageInput,
+    setMessageInput,
+    selectedFile: fileUpload.selectedFile,
+    messageInputRef,
+    loadMessages: chat.loadMessages,
+    sendSignalRMessage: signalR.sendMessage,
+    addMessage: chat.addMessage,
+    onLastMessageEvent: chat.onLastMessageEvent,
+    clearSelection: fileUpload.clearSelection,
+    uploadFile: fileUpload.uploadFile,
+    createGroup: chat.createGroup,
+    generateInviteLink: chat.generateInviteLink,
+    joinByInvite: chat.joinByInvite,
+    addMemberToGroup: chat.addMemberToGroup,
+    markConversationAsRead: chat.markConversationAsRead,
+    joinGroup: signalR.joinGroup,
+    addConversation: chat.addConversation,
+  });
+
+  // File handlers
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, isImage: boolean): void => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
-    try {
-      selectFile(file, isImage);
-    } catch (error) {
-      toast.error((error as Error).message);
-    }
+    fileUpload.selectFile(file, isImage);
   };
-  
-  const handleSendMessage = async (): Promise<void> => {
-    if ((!messageInput.trim() && !selectedFile) || !activeChat) return;
-    
-    try {
-      let fileData = null;
-      
-      if (selectedFile) {
-        fileData = await uploadFile(selectedFile);
-      }
-      
-      const messageData: SendMessageRequest = {
-        messageType: fileData ? fileData.messageType : MessageType.Text,
-        content: messageInput.trim() || '',
-        groupId: activeChat.type === 'group' ? activeChat.groupId : undefined,
-        receiverId: activeChat.type === 'user' ? activeChat.receiverId : undefined,
-        conversationId: activeChat.type === 'user' ? activeChat.conversationId : undefined,
-        fileUrl: fileData ? fileData.fileUrl : undefined,
-        fileName: fileData ? fileData.fileName : undefined,
-        fileSize: fileData ? fileData.fileSize : undefined,
-        fileType: fileData ? fileData.fileType : undefined,
-      };
-      
-      const newMessage = await sendSignalRMessage(messageData);
-      addMessage(newMessage!);
-      onLastMessageEvent && onLastMessageEvent(newMessage!);
-      setMessageInput('');
-      clearSelection();
-    } catch (error: any) {
-      toast.error('Failed to send message. ' + error.message);
-    }
-  };
-  
-  const handleCreateGroup = async (name: string, description: string): Promise<void> => {
-    if (!name.trim()) return;
-    
-    try {
-      await createGroup(name, description);
-      toast.success('Group created successfully!');
-    } catch (error) {
-      toast.error('Failed to create group. ' + (error as Error).message);
-    }
-  };
-  
-  const handleGenerateInvite = async (groupId: string): Promise<string> => {
-    try {
-      const code = await generateInviteLink(groupId);
-      toast.success(`Invite code: ${code}`, {
-        description: 'Share this code with others to invite them.',
-        duration: 5000,
-      });
-      return code;
-    } catch (error: any) {
-      toast.error('Failed to generate invite code. ' + error.message);
-      return '';
-    }
-  };
-  
-  const handleJoinByInvite = async (code: string): Promise<void> => {
-    if (!code.trim()) return;
-    
-    try {
-      await joinByInvite(code);
-      toast.success('Successfully joined group!');
-    } catch (error: any) {
-      toast.error('Invalid or expired invite code.' + error.message);
-    }
-  };
-  
-  const handleAddMember = async (groupId: string, userName: string): Promise<void> => {
-    if (!userName.trim()) return;
-    
-    try {
-      await addMemberToGroup(groupId, userName);
-      toast.success('Member added successfully!');
-    } catch (error: any) {
-      toast.error('Failed to add member.' + error.message);
-    }
-  };
-  
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-  
-  const handleStartChat = async (user: UserDto) => {
-    setActiveChat({ 
-      id: user.id, 
-      name: user.userName, 
-      type: 'user',
-      conversationId: undefined, // null when starting a new chat
-      receiverId: user.id
-    });
 
-    const newConv: Conversation= {
-      id: undefined,
-      userId: user.id,
-      userName: user.userName,
-      lastMessage: '',
-      unreadCount: 0,
-    }
-
-    addConversation(newConv);
-    
-    await loadMessages(user.id, 'user');
-  };
-  
   const handleImageSelect = () => imageInputRef.current?.click();
   const handleFileButtonSelect = () => fileInputRef.current?.click();
-  const handleClearFile = () => clearSelection();
-  const handleSearchUsers = (query: string) => searchUsers(query);
-  const handleClearSearch = () => clearSearch();
-  const handleMarkAsRead = async (conversationId: string, senderId: string) => {
-    await markConversationAsRead(conversationId, senderId);
-  };
+  const handleClearFile = () => fileUpload.clearSelection();
+  
+  // Search handlers
+  const handleSearchUsers = (query: string) => userSearch.searchUsers(query);
+  const handleClearSearch = () => userSearch.clearSearch();
   
   const value: ChatContextType = {
     // User
@@ -394,52 +166,55 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     currentUserId,
     
     // Connection
-    isConnected,
+    isConnected: signalR.isConnected,
     
     // Active Chat
     activeChat,
     setActiveChat,
     
     // Messages
-    messages,
+    messages: chat.messages,
     messageInput,
     setMessageInput,
     messagesEndRef,
     messageInputRef,
+    isLoadingMessages: chat.isLoadingMessages,
+    hasMoreMessages: chat.hasMoreMessages,
     
     // Conversations & Groups
-    conversations,
-    isLoadingConversations,
-    groups,
-    isLoadingGroups,
+    conversations: chat.conversations,
+    isLoadingConversations: chat.isLoadingConversations,
+    groups: chat.groups,
+    isLoadingGroups: chat.isLoadingGroups,
     
     // File Upload
-    isUploading,
-    selectedFile,
-    previewUrl,
+    isUploading: fileUpload.isUploading,
+    selectedFile: fileUpload.selectedFile,
+    previewUrl: fileUpload.previewUrl,
     imageInputRef,
     fileInputRef,
     
     // User Search
-    searchResults,
-    isSearching,
+    searchResults: userSearch.users,
+    isSearching: userSearch.isSearching,
     
     // Handlers
-    handleChatSelect,
-    handleSendMessage,
-    handleKeyDown,
+    handleChatSelect: handlers.handleChatSelect,
+    handleSendMessage: handlers.handleSendMessage,
+    handleKeyDown: handlers.handleKeyDown,
     handleFileSelect,
-    handleCreateGroup,
-    handleGenerateInvite,
-    handleJoinByInvite,
-    handleAddMember,
-    handleStartChat,
+    handleCreateGroup: handlers.handleCreateGroup,
+    handleGenerateInvite: handlers.handleGenerateInvite,
+    handleJoinByInvite: handlers.handleJoinByInvite,
+    handleAddMember: handlers.handleAddMember,
+    handleStartChat: handlers.handleStartChat,
     handleImageSelect,
     handleFileButtonSelect,
     handleClearFile,
     handleSearchUsers,
     handleClearSearch,
-    handleMarkAsRead,
+    handleMarkAsRead: handlers.handleMarkAsRead,
+    handleLoadMoreMessages: handlers.handleLoadMoreMessages,
   };
   
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
