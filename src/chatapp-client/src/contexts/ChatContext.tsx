@@ -38,6 +38,8 @@ interface ChatContextType {
   loadMoreConversations: () => Promise<void>;
   groups: any[];
   isLoadingGroups: boolean;
+  hasMoreGroups: boolean;
+  loadMoreGroups: () => Promise<void>;
 
   // File Upload
   isUploading: boolean;
@@ -192,6 +194,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loadMoreConversations: async () => await chat.loadConversations(true),
     groups: chat.groups,
     isLoadingGroups: chat.isLoadingGroups,
+    hasMoreGroups: chat.hasMoreGroups,
+    loadMoreGroups: async () => await chat.loadGroups(true),
     
     // File Upload
     isUploading: fileUpload.isUploading,

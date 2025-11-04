@@ -3,7 +3,7 @@ using ChatApp.Application.Models;
 
 namespace ChatApp.Application.Queries.Groups.GetUserGroups;
 
-public class GetUserGroupsQuery: IQuery<AppResponse<List<GroupDto>>>
+public class GetUserGroupsQuery : PaginationRequest, IQuery<AppResponse<PagedResult<GroupDto>>>
 {
     public Guid UserId { get; set; }
 }

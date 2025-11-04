@@ -18,10 +18,12 @@ public class ChatHub : Hub
 {
     private readonly IMediator _mediator;
     private readonly IRepository<Conversation> _conversationRepository;
-    public ChatHub(IMediator mediator, IRepository<Conversation> conversationRepository)
+    private readonly IRepository<Group> _groupRepository;
+    public ChatHub(IMediator mediator, IRepository<Conversation> conversationRepository, IRepository<Group> groupRepository)
     {
         _mediator = mediator;
         _conversationRepository = conversationRepository;
+        _groupRepository = groupRepository;
     }
 
     private string? GetUserId()
@@ -52,13 +54,10 @@ public class ChatHub : Hub
             await Groups.AddToGroupAsync(Context.ConnectionId, userId);
 
             // Join user to all their groups
-            var userGroupsResponse = await _mediator.Send(new GetUserGroupsQuery { UserId = Guid.Parse(userId) });
-            if (userGroupsResponse.IsSuccess && userGroupsResponse.Data != null)
+            var groups = await _groupRepository.GetAllAsync(g => g.Members.Any(m => m.UserId == Guid.Parse(userId)));   
+            foreach (var group in groups)
             {
-                foreach (var group in userGroupsResponse.Data)
-                {
-                    await Groups.AddToGroupAsync(Context.ConnectionId, group.Id.ToString());
-                }
+                await Groups.AddToGroupAsync(Context.ConnectionId, group.Id.ToString());
             }
 
             // Join user to all their conversations

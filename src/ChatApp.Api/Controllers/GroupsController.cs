@@ -25,10 +25,16 @@ namespace ChatApp.Api.Controllers;
 public class GroupsController(IMediator mediator) : AuthenticatedControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<AppResponse<List<GroupDto>>>> GetUserGroups()
+    public async Task<ActionResult<AppResponse<PagedResult<GroupDto>>>> GetUserGroups([FromQuery] PaginationRequest request)
     {
-        var userId = CurrentUserId;
-        var query = new GetUserGroupsQuery { UserId = userId };
+        var query = new GetUserGroupsQuery 
+        { 
+            UserId = CurrentUserId,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize,
+            SortBy = request.SortBy,
+            SortOrder = request.SortOrder
+        };
         var response = await mediator.Send(query);
         return Ok(response);
     }

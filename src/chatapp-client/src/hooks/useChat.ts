@@ -1,6 +1,6 @@
 
 // src/hooks/useChat.ts
-import { useState, useCallback, useRef, use } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { Conversation, Group, Message } from '@/types/chat.types';
 import { conversationService } from '@/services/conversationService';
 import { groupService } from '@/services/groupService';
@@ -16,6 +16,7 @@ interface UseChatReturn {
 
   groups: Group[];
   isLoadingGroups: boolean;
+  hasMoreGroups: boolean;
 
   messages: Message[];
   messagesPagination: PaginationRequest;
@@ -24,7 +25,7 @@ interface UseChatReturn {
   
   loadConversations: (loadMore?: boolean) => Promise<void>;
   addConversation: (conversation: Conversation) => void;
-  loadGroups: () => Promise<void>;
+  loadGroups: (loadMore?: boolean) => Promise<void>;
   loadMessages: (chatId: string, type: 'user' | 'group', loadMore?: boolean) => Promise<void>;
   addMessage: (message: Message) => void;
   clearMessages: () => void;
@@ -54,7 +55,17 @@ export const useChat = (): UseChatReturn => {
   const [hasMoreConversations, setHasMoreConversations] = useState<boolean>(false);
   const hasMoreConversationsRef = useRef<boolean>(false);
   
-  const [isLoadingGroups, setIsLoadingGroups] = useState<boolean>(true);
+  const [isLoadingGroups, setIsLoadingGroups] = useState<boolean>(false);
+  const isLoadingGroupsRef = useRef<boolean>(false);
+  const groupsPaginationRef = useRef<PaginationRequest>({
+    ...defaultPaginationRequest,
+    pageSize: 10,
+    sortBy: 'CreatedAt',
+    sortOrder: 'desc'
+  });
+  const [hasMoreGroups, setHasMoreGroups] = useState<boolean>(false);
+  const hasMoreGroupsRef = useRef<boolean>(false);
+  
   const [groups, setGroups] = useState<Group[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const { applicationUserId } = useAuth();
@@ -108,16 +119,48 @@ export const useChat = (): UseChatReturn => {
     }
   }, []);
 
-  const loadGroups = useCallback(async () => {
-    setIsLoadingGroups(true);
+  const loadGroups = useCallback(async (loadMore: boolean = false) => {
     try {
-      const result = await groupService.getUserGroups();
-      setIsLoadingGroups(false);
-      setGroups(result);
+      // Prevent loading more if already loading or no more groups
+      if (loadMore && (isLoadingGroupsRef.current || !hasMoreGroupsRef.current)) {
+        return;
+      }
+
+      isLoadingGroupsRef.current = true;
+      setIsLoadingGroups(true);
+
+      // Determine pagination
+      const pagination = loadMore
+        ? { ...groupsPaginationRef.current, pageNumber: groupsPaginationRef.current.pageNumber + 1 }
+        : { ...groupsPaginationRef.current, pageNumber: 1 };
+
+      const result = await groupService.getUserGroups(pagination);
+      
+      if (!result || result.items.length === 0) {
+        if (!loadMore) {
+          setGroups([]);
+        }
+        hasMoreGroupsRef.current = false;
+        setHasMoreGroups(false);
+        return;
+      }
+
+      // Update groups
+      if (loadMore) {
+        setGroups(prev => [...prev, ...result.items]);
+      } else {
+        setGroups(result.items);
+      }
+
+      // Update pagination state
+      groupsPaginationRef.current = pagination;
+      hasMoreGroupsRef.current = result.hasNextPage;
+      setHasMoreGroups(result.hasNextPage);
+      
     } catch (error) {
       console.error('Error loading groups:', error);
-    }
-    finally {
+    } finally {
+      isLoadingGroupsRef.current = false;
       setIsLoadingGroups(false);
     }
   }, []);
@@ -316,6 +359,7 @@ export const useChat = (): UseChatReturn => {
     hasMoreConversations,
     groups,
     isLoadingGroups,
+    hasMoreGroups,
     messages,
     messagesPagination,
     isLoadingMessages,

@@ -1,8 +1,25 @@
 import { Group, GroupInfo, InviteLinkResponse } from "@/types/chat.types";
+import { PaginatedResponse, PaginationRequest } from "@/types";
 import { apiService } from "./api";
 
 export const groupService = {
-  getUserGroups: () => apiService.get<Group[]>('/api/groups'),
+  getUserGroups: (params?: PaginationRequest) => {
+    const queryParams = new URLSearchParams();
+    if (params?.pageNumber !== undefined) {
+      queryParams.append('pageNumber', params.pageNumber.toString());
+    }
+    if (params?.pageSize !== undefined) {
+      queryParams.append('pageSize', params.pageSize.toString());
+    }
+    if (params?.sortBy) {
+      queryParams.append('sortBy', params.sortBy);
+    }
+    if (params?.sortOrder) {
+      queryParams.append('sortOrder', params.sortOrder);
+    }
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return apiService.get<PaginatedResponse<Group>>(`/api/groups${queryString}`);
+  },
   
   createGroup: (data: { name: string; description?: string }) =>
     apiService.post<Group>('/api/groups', data),

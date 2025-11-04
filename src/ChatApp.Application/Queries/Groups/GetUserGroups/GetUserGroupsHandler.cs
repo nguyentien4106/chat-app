@@ -6,19 +6,21 @@ using Microsoft.EntityFrameworkCore;
 namespace ChatApp.Application.Queries.Groups.GetUserGroups;
 
 public class GetUserGroupsHandler(
-    IRepository<GroupMember> groupMemberRepository
-) : IQueryHandler<GetUserGroupsQuery, AppResponse<List<GroupDto>>>
+    IRepositoryPagedQuery<GroupMember> pagedGroupMemberRepository
+) : IQueryHandler<GetUserGroupsQuery, AppResponse<PagedResult<GroupDto>>>
 {
 
-    public async Task<AppResponse<List<GroupDto>>> Handle(GetUserGroupsQuery request, CancellationToken cancellationToken)
+    public async Task<AppResponse<PagedResult<GroupDto>>> Handle(GetUserGroupsQuery request, CancellationToken cancellationToken)
     {
-        var result = await groupMemberRepository.GetAllAsync(
-            gm => gm.UserId == request.UserId,
+        // Get paginated group members where the user is a member
+        var pagedGroupMembers = await pagedGroupMemberRepository.GetPagedResultAsync(
+            request,
+            filter: gm => gm.UserId == request.UserId,
             includeProperties: new[] { "Group.Members" },
             cancellationToken: cancellationToken
         );
 
-        var dtos = result.Select(gm => new GroupDto
+        var dtos = pagedGroupMembers.Items.Select(gm => new GroupDto
         {
             Id = gm.Group.Id,
             Name = gm.Group.Name,
@@ -27,6 +29,15 @@ public class GetUserGroupsHandler(
             CreatedAt = gm.Group.CreatedAt,
             MemberCount = gm.Group.Members.Count
         }).ToList();
-        return AppResponse<List<GroupDto>>.Success(dtos);
+
+        // Create new PagedResult with DTOs
+        var pagedResult = new PagedResult<GroupDto>(
+            dtos,
+            pagedGroupMembers.TotalCount,
+            pagedGroupMembers.PageNumber,
+            pagedGroupMembers.PageSize
+        );
+
+        return AppResponse<PagedResult<GroupDto>>.Success(pagedResult);
     }
 }
