@@ -11,7 +11,7 @@ const ChatAppContent: React.FC = () => {
     handleFileSelect,
   } = useChatContext();
   return (
-    <div className="flex h-full bg-gray-100 overflow-hidden">
+    <div className="flex h-full bg-background overflow-hidden">
       {/* Hidden file inputs */}
       <input
         ref={imageInputRef}

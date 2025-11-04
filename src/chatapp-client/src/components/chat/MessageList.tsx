@@ -95,7 +95,7 @@ export const MessageList: React.FC = () => {
         <div className="space-y-4">
           {/* Loading indicator for more messages */}
           {isLoadingMessages && hasMoreMessages && (
-            <div className="text-center text-gray-500 py-2">
+            <div className="text-center text-muted-foreground py-2">
               Loading more messages...
             </div>
           )}

@@ -273,7 +273,7 @@ export const useChat = (): UseChatReturn => {
   const onGroupEvent = useCallback(({ groupId, event, group }: { groupId: string; event: 'createdGroup' | 'removedGroup', group: Group | null }) => {
     setGroups(prev => {
       if (event === 'createdGroup' && group != null ) {
-        return [...prev, group];
+        return [group, ...prev];
       } else if (event === 'removedGroup') {
         return prev.filter(g => g.id !== groupId);
       }

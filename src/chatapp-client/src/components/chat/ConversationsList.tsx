@@ -53,10 +53,10 @@ export const ConversationsList: React.FC = () => {
     <ScrollArea className="h-full px-4">
       {conversations.length === 0 && isLoadingConversations ? (
         <div className="flex items-center justify-center p-8">
-          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
       ) : conversations.length === 0 ? (
-        <div className="p-4 text-center text-gray-500">
+        <div className="p-4 text-center text-muted-foreground">
           No conversations yet
         </div>
       ) : (
@@ -83,14 +83,14 @@ export const ConversationsList: React.FC = () => {
           {hasMoreConversations && (
             <div ref={loadMoreRef} className="flex items-center justify-center p-4">
               {isLoadingConversations && (
-                <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               )}
             </div>
           )}
           
           {/* End of list indicator */}
           {!hasMoreConversations && conversations.length > 0 && (
-            <div className="p-4 text-center text-gray-400 text-sm">
+            <div className="p-4 text-center text-muted-foreground text-sm">
               No more conversations
             </div>
           )}

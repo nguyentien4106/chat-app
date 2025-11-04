@@ -16,8 +16,8 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({
   return (
     <div
       onClick={onSelect}
-      className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
-        isActive ? "bg-blue-50" : ""
+      className={`p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors ${
+        isActive ? "bg-accent" : ""
       }`}
     >
       <div className="flex items-center space-x-3">
@@ -27,14 +27,14 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{conversation.userFullName}</p>
-          <p className="text-sm text-gray-500 truncate">
+          <p className="font-medium truncate text-foreground">{conversation.userFullName}</p>
+          <p className="text-sm text-muted-foreground truncate">
             {conversation.isLastMessageMine ? "You: " : ""}
             {conversation.lastMessage}
           </p>
         </div>
         {conversation.unreadCount > 0 && (
-          <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-1">
+          <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-1">
             {conversation.unreadCount}
           </span>
         )}

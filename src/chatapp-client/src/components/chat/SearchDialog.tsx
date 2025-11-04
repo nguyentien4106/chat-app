@@ -47,7 +47,7 @@ export const SearchDialog: React.FC<SearchDialogProps> = ({
           </DialogHeader>
           <div className="space-y-4">
             <div className="relative">
-              <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search by username or email..."
                 value={searchTerm}
@@ -62,7 +62,7 @@ export const SearchDialog: React.FC<SearchDialogProps> = ({
                   <Loader2 className="w-6 h-6 animate-spin" />
                 </div>
               ) : searchResults.length === 0 ? (
-                <div className="text-center text-gray-500 p-4">
+                <div className="text-center text-muted-foreground p-4">
                   {searchTerm.length > 2
                     ? "No users found"
                     : "Type to search users"}
@@ -73,7 +73,7 @@ export const SearchDialog: React.FC<SearchDialogProps> = ({
                     <div
                       key={user.id}
                       onClick={() => onUserClick(user)}
-                      className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 cursor-pointer"
+                      className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer"
                     >
                       <Avatar>
                         <AvatarFallback>
@@ -81,8 +81,8 @@ export const SearchDialog: React.FC<SearchDialogProps> = ({
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <p className="font-medium">{user.firstName} {user.lastName}</p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <p className="font-medium text-foreground">{user.firstName} {user.lastName}</p>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
                   ))}

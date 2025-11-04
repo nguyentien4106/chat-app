@@ -63,7 +63,7 @@ export const ChatSidebar: React.FC = () => {
   if (!isOpen) return null;
 
   return (
-    <div className="w-80 bg-white border-r flex flex-col h-full">
+    <div className="w-80 bg-card border-r flex flex-col h-full">
       <SidebarHeader />
 
       <SearchDialog

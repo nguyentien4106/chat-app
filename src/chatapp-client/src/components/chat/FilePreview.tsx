@@ -17,8 +17,8 @@ export const FilePreview: React.FC = () => {
   if (!selectedFile) return null;
 
   return (
-    <div className="bg-white border-t p-4 flex-shrink-0">
-      <div className="flex items-center space-x-3 bg-gray-100 p-3 rounded-lg">
+    <div className="bg-card border-t p-4 flex-shrink-0">
+      <div className="flex items-center space-x-3 bg-muted p-3 rounded-lg">
         {previewUrl ? (
           <img
             src={previewUrl}
@@ -26,13 +26,13 @@ export const FilePreview: React.FC = () => {
             className="w-16 h-16 object-cover rounded"
           />
         ) : (
-          <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
-            <Paperclip className="w-8 h-8 text-gray-400" />
+          <div className="w-16 h-16 bg-muted-foreground/20 rounded flex items-center justify-center">
+            <Paperclip className="w-8 h-8 text-muted-foreground" />
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{selectedFile?.name}</p>
-          <p className="text-sm text-gray-500">
+          <p className="font-medium truncate text-foreground">{selectedFile?.name}</p>
+          <p className="text-sm text-muted-foreground">
             {formatFileSize(selectedFile?.size)}
           </p>
         </div>

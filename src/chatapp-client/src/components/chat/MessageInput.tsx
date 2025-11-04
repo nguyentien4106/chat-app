@@ -22,7 +22,7 @@ export const MessageInput: React.FC = () => {
 const hasSelectedFile = !!selectedFile;
 
   return (
-    <div className="bg-white border-t p-4 flex-shrink-0">
+    <div className="bg-card border-t p-4 flex-shrink-0">
       <div className="flex space-x-2">
         <Button
           variant="outline"

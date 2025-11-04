@@ -25,7 +25,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   if (message.messageType === MessageType.Notification) {
     return (
       <div className="flex justify-center items-center my-2 w-full">
-        <div className="text-xs text-gray-500 text-center px-3 py-1">
+        <div className="text-xs text-muted-foreground text-center px-3 py-1">
           {message.content}
         </div>
       </div>
@@ -37,8 +37,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       <div
         className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
           isOwn
-            ? "bg-blue-500 text-white"
-            : "bg-white text-gray-900 border border-gray-200"
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted text-foreground border"
         }`}
       >
         {showSender && !isOwn && message.senderUserName && (
@@ -59,7 +59,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         )}
 
         {message.messageType === MessageType.File && message.fileUrl && (
-          <div className="flex items-center space-x-2 mb-2 p-2 bg-white bg-opacity-20 rounded">
+          <div className="flex items-center space-x-2 mb-2 p-2 bg-background/20 rounded">
             <Paperclip className="w-4 h-4" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{message.fileName}</p>

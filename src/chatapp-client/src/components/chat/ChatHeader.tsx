@@ -14,24 +14,24 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({ activeChat }) => {
 
   return (
     <>
-      <div className="bg-white border-b p-4 flex-shrink-0">
+      <div className="bg-card border-b p-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Avatar className="h-10 w-10">
-              <AvatarFallback className="bg-blue-500 text-white">
+              <AvatarFallback className="bg-primary text-primary-foreground">
                 {activeChat.userFullName ? activeChat.userFullName[0].toUpperCase() : activeChat.name[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <h2 className="font-semibold text-gray-900 leading-tight">
+              <h2 className="font-semibold text-foreground leading-tight">
                 {activeChat.userFullName || activeChat.name}
               </h2>
               {activeChat.userFullName && activeChat.name && (
-                <p className="text-xs text-gray-500 leading-tight">
+                <p className="text-xs text-muted-foreground leading-tight">
                   @{activeChat.name}
                 </p>
               )}
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-muted-foreground/80 mt-0.5">
                 {activeChat.type === "group" ? "Group Chat" : "Direct Message"}
               </p>
             </div>

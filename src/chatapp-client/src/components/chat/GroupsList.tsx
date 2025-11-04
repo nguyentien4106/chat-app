@@ -69,10 +69,10 @@ export const GroupsList: React.FC = () => {
     <ScrollArea className="flex-1 px-4 min-h-0">
       {groups.length === 0 && isLoadingGroups ? (
         <div className="flex items-center justify-center p-8">
-          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
       ) : groups.length === 0 ? (
-        <div className="p-4 text-center text-gray-500">No groups yet</div>
+        <div className="p-4 text-center text-muted-foreground">No groups yet</div>
       ) : (
         <>
           {groups.map((group) => (
@@ -87,8 +87,8 @@ export const GroupsList: React.FC = () => {
                 groupId: group.id,
               })
             }
-            className={`p-4 border-b cursor-pointer hover:bg-gray-50 ${
-              activeChat?.id === group.id ? "bg-blue-50" : ""
+            className={`p-4 border-b cursor-pointer hover:bg-muted/50 ${
+              activeChat?.id === group.id ? "bg-accent" : ""
             }`}
           >
             <div className="flex items-center space-x-3">

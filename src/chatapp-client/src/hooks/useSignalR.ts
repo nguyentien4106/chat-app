@@ -25,65 +25,94 @@ export const useSignalR = (): UseSignalRReturn => {
   useEffect(() => {
     const token = Cookies.get("chat_app_access_token");
     
+    if (!token) {
+      console.warn('No access token found, skipping SignalR connection');
+      return;
+    }
+
     const newConnection = new signalR.HubConnectionBuilder()
       .withUrl(SIGNALR_HUB_URL, {
         accessTokenFactory: () => token || '',
         skipNegotiation: true,
         transport: signalR.HttpTransportType.WebSockets
       })
-      .withAutomaticReconnect()
-      .configureLogging(signalR.LogLevel.Error)
+      .withAutomaticReconnect({
+        nextRetryDelayInMilliseconds: retryContext => {
+          // Exponential backoff: 0s, 2s, 10s, 30s
+          if (retryContext.elapsedMilliseconds < 60000) {
+            return Math.min(1000 * Math.pow(2, retryContext.previousRetryCount), 30000);
+          }
+          // Stop retrying after 1 minute
+          return null;
+        }
+      })
+      .configureLogging(signalR.LogLevel.Warning)
       .build();
 
-    let isSubscribed = true;
-    let startPromise: Promise<void> | null = null;
+    let isMounted = true;
 
     // Set up event handlers before starting
     newConnection.onreconnecting(() => {
-      console.log('Reconnecting...');
-      setIsConnected(false);
+      if (isMounted) {
+        console.log('SignalR: Reconnecting...');
+        setIsConnected(false);
+      }
     });
 
     newConnection.onreconnected(() => {
-      console.log('Reconnected');
-      setIsConnected(true);
+      if (isMounted) {
+        console.log('SignalR: Reconnected successfully');
+        setIsConnected(true);
+      }
     });
 
-    newConnection.onclose(() => {
-      console.log('Connection closed');
-      setIsConnected(false);
+    newConnection.onclose((error) => {
+      if (isMounted) {
+        if (error) {
+          console.error('SignalR: Connection closed with error:', error);
+        } else {
+          console.log('SignalR: Connection closed');
+        }
+        setIsConnected(false);
+      }
     });
 
     setConnection(newConnection);
 
     // Start the connection
-    startPromise = newConnection.start()
-      .then(() => {
-        if (isSubscribed) {
-          console.log('SignalR Connected');
+    const startConnection = async () => {
+      try {
+        await newConnection.start();
+        if (isMounted) {
+          console.log('SignalR: Connected successfully');
           setIsConnected(true);
         }
-      })
-      .catch(err => {
-        if (isSubscribed) {
-          console.error('SignalR Connection Error:', err);
+      } catch (err) {
+        if (isMounted) {
+          console.error('SignalR: Connection failed:', err);
           setIsConnected(false);
         }
-      });
+      }
+    };
+
+    startConnection();
 
     return () => {
-      isSubscribed = false;
+      isMounted = false;
       
-      // Wait for the start to complete (or fail) before stopping
-      if (startPromise) {
-        startPromise.finally(() => {
-          if (newConnection.state === signalR.HubConnectionState.Connected) {
-            newConnection.stop().catch(err => {
-              console.error('Error stopping connection:', err);
-            });
+      // Gracefully stop the connection
+      const stopConnection = async () => {
+        if (newConnection.state !== signalR.HubConnectionState.Disconnected) {
+          try {
+            await newConnection.stop();
+            console.log('SignalR: Connection stopped cleanly');
+          } catch (err) {
+            console.error('SignalR: Error stopping connection:', err);
           }
-        });
-      }
+        }
+      };
+
+      stopConnection();
     };
   }, []);
 
