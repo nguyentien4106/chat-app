@@ -17,6 +17,7 @@ interface UseSignalREventsProps {
   onMemberAdded: (callback: (data: any) => void) => void;
   onMemberRemoved: (callback: (data: any) => void) => void;
   onMemberLeft: (callback: (data: any) => void) => void;
+  onGroupDeleted: (callback: (data: any) => void) => void;
 }
 
 export const useSignalREvents = ({
@@ -33,6 +34,7 @@ export const useSignalREvents = ({
   onMemberAdded,
   onMemberRemoved,
   onMemberLeft,
+  onGroupDeleted
 }: UseSignalREventsProps) => {
 
   const isCurrentUser = useCallback((userId: string): boolean => {
@@ -125,6 +127,12 @@ export const useSignalREvents = ({
         onMessagesEvent(data.message);
       }
     });
+
+    onGroupDeleted((data) => {
+      console.log(data)
+      onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
+
+    })
   }, [
     connection,
     activeChat,

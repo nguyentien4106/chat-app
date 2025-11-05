@@ -132,7 +132,7 @@ export const useChatHandlers = ({
       await joinByInvite(code);
       toast.success('Successfully joined group!');
     } catch (error: any) {
-      toast.error('Invalid or expired invite code.' + error.message);
+      toast.error(error.message);
     }
   }, [joinByInvite]);
 

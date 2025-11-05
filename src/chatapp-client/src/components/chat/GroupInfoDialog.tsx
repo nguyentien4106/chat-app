@@ -1,20 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { GroupInfo } from "@/types/chat.types";
-import { groupService } from "@/services/groupService";
 import { Loader2, Users, Calendar, Shield, LogOut, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatContext } from "@/contexts/ChatContext";
-import { toast } from "sonner";
 import { JWT_CLAIMS } from "@/constants/jwtClaims";
+import { useGroup } from "@/hooks/useGroup";
 
 interface GroupInfoDialogProps {
   open: boolean;
@@ -27,37 +27,34 @@ export const GroupInfoDialog: React.FC<GroupInfoDialogProps> = ({
   onOpenChange,
   groupId,
 }) => {
-  const [groupInfo, setGroupInfo] = useState<GroupInfo | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
-  const [isLeaving, setIsLeaving] = useState(false);
   const { user } = useAuth();
   const { setActiveChat } = useChatContext();
+
+  const {
+    groupInfo,
+    loading,
+    error,
+    removingMemberId,
+    isLeaving,
+    isDeleting,
+    showDeleteConfirm,
+    handleLeaveGroup,
+    handleRemoveMember,
+    handleDeleteGroup,
+    openDeleteConfirm,
+    closeDeleteConfirm,
+  } = useGroup({
+    groupId,
+    isOpen: open,
+    onClose: () => onOpenChange(false),
+    onGroupDeleted: () => setActiveChat(null),
+    onGroupLeft: () => setActiveChat(null),
+  });
 
   const currentUserId = user?.[JWT_CLAIMS.NAME_IDENTIFIER];
   const currentUserMember = groupInfo?.members.find(m => m.userId === currentUserId);
   const isCurrentUserAdmin = currentUserMember?.isAdmin || false;
   const isCreator = groupInfo?.createdById === currentUserId;
-
-  useEffect(() => {
-    if (open && groupId) {
-      fetchGroupInfo();
-    }
-  }, [open, groupId]);
-
-  const fetchGroupInfo = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await groupService.getGroupInfo(groupId);
-      setGroupInfo(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load group information");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -65,38 +62,6 @@ export const GroupInfoDialog: React.FC<GroupInfoDialogProps> = ({
       month: "long",
       day: "numeric",
     });
-  };
-
-  const handleLeaveGroup = async () => {
-    if (!groupInfo) return;
-    
-    setIsLeaving(true);
-    try {
-      await groupService.leaveGroup(groupId);
-      toast.success("You have left the group");
-      onOpenChange(false);
-      setActiveChat(null); // Close the active chat
-    } catch (err: any) {
-      toast.error(err.message || "Failed to leave group");
-    } finally {
-      setIsLeaving(false);
-    }
-  };
-
-  const handleRemoveMember = async (userId: string, userName: string) => {
-    if (!groupInfo) return;
-    
-    setRemovingMemberId(userId);
-    try {
-      await groupService.removeMember(groupId, userId);
-      toast.success(`${userName} has been removed from the group`);
-      // Refresh group info
-      await fetchGroupInfo();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to remove member");
-    } finally {
-      setRemovingMemberId(null);
-    }
   };
 
   return (
@@ -108,10 +73,10 @@ export const GroupInfoDialog: React.FC<GroupInfoDialogProps> = ({
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : error ? (
-          <div className="text-center py-8 text-red-500">{error}</div>
+          <div className="text-center py-8 text-destructive">{error}</div>
         ) : groupInfo ? (
           <div className="space-y-6">
             {/* Group Details */}
@@ -125,17 +90,17 @@ export const GroupInfoDialog: React.FC<GroupInfoDialogProps> = ({
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold">{groupInfo.name}</h3>
                   {groupInfo.description && (
-                    <p className="text-gray-600 mt-1">{groupInfo.description}</p>
+                    <p className="text-muted-foreground mt-1">{groupInfo.description}</p>
                   )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <Users className="h-4 w-4" />
                   <span>{groupInfo.memberCount} members</span>
                 </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
                   <span>Created {formatDate(groupInfo.createdAt)}</span>
                 </div>
@@ -170,11 +135,11 @@ export const GroupInfoDialog: React.FC<GroupInfoDialogProps> = ({
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-gray-500">{member.email}</p>
+                        <p className="text-sm text-muted-foreground">{member.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-muted-foreground/80">
                         Joined {formatDate(member.joinedAt)}
                       </div>
                       {isCurrentUserAdmin && 
@@ -200,9 +165,10 @@ export const GroupInfoDialog: React.FC<GroupInfoDialogProps> = ({
               </div>
             </div>
 
-            {/* Leave Group Button */}
-            {!isCreator && (
-              <div className="pt-4 border-t">
+            {/* Action Buttons */}
+            <div className="pt-4 border-t space-y-2">
+              {/* Leave Group Button - for non-creators */}
+              {!isCreator && (
                 <Button
                   variant="destructive"
                   onClick={handleLeaveGroup}
@@ -221,11 +187,62 @@ export const GroupInfoDialog: React.FC<GroupInfoDialogProps> = ({
                     </>
                   )}
                 </Button>
-              </div>
-            )}
+              )}
+
+              {/* Delete Group Button - only for creators */}
+              {isCreator && (
+                <Button
+                  variant="destructive"
+                  onClick={openDeleteConfirm}
+                  disabled={isDeleting}
+                  className="w-full"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Group
+                </Button>
+              )}
+            </div>
           </div>
         ) : null}
       </DialogContent>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={closeDeleteConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Group</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{groupInfo?.name}"? This action cannot be undone and all members will be removed from the group.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={closeDeleteConfirm}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteGroup}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Group
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };

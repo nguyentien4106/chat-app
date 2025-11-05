@@ -4,6 +4,7 @@ using ChatApp.Api.Controllers.Base;
 using ChatApp.Api.Models.Requests;
 using ChatApp.Application.Commands.Groups.AddUserToGroup;
 using ChatApp.Application.Commands.Groups.CreateGroup;
+using ChatApp.Application.Commands.Groups.DeleteGroup;
 using ChatApp.Application.Commands.Groups.GenerateLink;
 using ChatApp.Application.Commands.Groups.JoinGroup;
 using ChatApp.Application.Commands.Groups.LeaveGroup;
@@ -132,6 +133,19 @@ public class GroupsController(IMediator mediator) : AuthenticatedControllerBase
     {
         var userId = CurrentUserId;
         var command = new LeaveGroupCommand
+        {
+            GroupId = groupId,
+            UserId = userId
+        };
+
+        return Ok(await mediator.Send(command));
+    }
+
+    [HttpDelete("{groupId}")]
+    public async Task<ActionResult<AppResponse<Unit>>> DeleteGroup(Guid groupId)
+    {
+        var userId = CurrentUserId;
+        var command = new DeleteGroupCommand
         {
             GroupId = groupId,
             UserId = userId

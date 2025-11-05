@@ -125,6 +125,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     onMemberAdded: signalR.onMemberAdded,
     onMemberRemoved: signalR.onMemberRemoved,
     onMemberLeft: signalR.onMemberLeft,
+    onGroupDeleted: signalR.onGroupDeleted
   });
   
   // All handlers

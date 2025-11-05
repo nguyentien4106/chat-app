@@ -18,6 +18,5 @@ public class MessageDto
     public Guid? GroupId { get; set; }
     public DateTime CreatedAt { get; set; }
     public bool IsRead { get; set; }
-    
     public string? GroupName { get; set; }
 }

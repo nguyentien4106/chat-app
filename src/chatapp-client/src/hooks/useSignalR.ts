@@ -16,6 +16,7 @@ interface UseSignalRReturn {
   onMemberAdded: (callback: (data: { groupId: string; userId: string; group: Group; message: Message }) => void) => void;
   onMemberRemoved: (callback: (data: { groupId: string; userId: string, message: Message }) => void) => void;
   onMemberLeft: (callback: (data: { groupId: string; userId: string, message: Message}) => void) => void;
+  onGroupDeleted: (callback: (data: { groupId: string; groupName: string }) => void) => void;
 }
 
 export const useSignalR = (): UseSignalRReturn => {
@@ -167,6 +168,13 @@ export const useSignalR = (): UseSignalRReturn => {
     }
   }, [connection]);
 
+  const onGroupDeleted = useCallback((callback: (data: { groupId: string; groupName: string }) => void) => {
+    if (connection) {
+      connection.off('GroupDeleted');
+      connection.on('GroupDeleted', callback);
+    }
+  }, [connection]); 
+
   return {
     connection,
     isConnected,
@@ -176,6 +184,7 @@ export const useSignalR = (): UseSignalRReturn => {
     onReceiveMessage,
     onMemberAdded,
     onMemberRemoved,
-    onMemberLeft
+    onMemberLeft,
+    onGroupDeleted,
   };
 };

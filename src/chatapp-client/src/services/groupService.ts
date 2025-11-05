@@ -40,5 +40,8 @@ export const groupService = {
     apiService.post(`/api/groups/${groupId}/leave`),
 
   removeMember: (groupId: string, userId: string) =>
-    apiService.delete(`/api/groups/${groupId}/members`, { userId })
+    apiService.delete(`/api/groups/${groupId}/members`, { userId }),
+
+  deleteGroup: (groupId: string) =>
+    apiService.delete(`/api/groups/${groupId}`)
 };
