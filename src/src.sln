@@ -2,13 +2,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApp.Api", "ChatApp.Api\ChatApp.Api.csproj", "{A189359E-87B2-D3D9-9CD7-1DB58CBD1427}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EzyChat.Api", "EzyChat.Api\EzyChat.Api.csproj", "{A189359E-87B2-D3D9-9CD7-1DB58CBD1427}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApp.Application", "ChatApp.Application\ChatApp.Application.csproj", "{34AA9E83-F8FC-64E8-D0F7-B4AC384960EE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EzyChat.Application", "EzyChat.Application\EzyChat.Application.csproj", "{34AA9E83-F8FC-64E8-D0F7-B4AC384960EE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApp.Domain", "ChatApp.Domain\ChatApp.Domain.csproj", "{61A42ED3-D3C8-4EC5-7828-8949BB7D6BFA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EzyChat.Domain", "EzyChat.Domain\EzyChat.Domain.csproj", "{61A42ED3-D3C8-4EC5-7828-8949BB7D6BFA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApp.Infrastructure", "ChatApp.Infrastructure\ChatApp.Infrastructure.csproj", "{4629D9F8-175D-A88B-6725-9F4E8FFED0E8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EzyChat.Infrastructure", "EzyChat.Infrastructure\EzyChat.Infrastructure.csproj", "{4629D9F8-175D-A88B-6725-9F4E8FFED0E8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
