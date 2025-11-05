@@ -7,9 +7,8 @@ export const SidebarHeader: React.FC = () => {
 
   return (
     <div className="p-4 border-b">
-      <h1 className="text-xl font-bold">Chat App</h1>
       <p className="text-sm text-gray-500">
-        {user?.userName ||
+        @{user?.userName ||
           user?.[JWT_CLAIMS.NAME] ||
           user?.[JWT_CLAIMS.EMAIL] ||
           "User"}

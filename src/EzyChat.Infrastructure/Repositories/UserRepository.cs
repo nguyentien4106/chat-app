@@ -5,7 +5,7 @@ using EzyChat.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace ChatApp.Domain.Repositories;
+namespace EzyChat.Domain.Repositories;
 
 public class UserRepository(
     ILogger<UserRepository> logger,

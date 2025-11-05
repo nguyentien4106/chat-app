@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace ChatApp.Domain.Repositories;
+namespace EzyChat.Domain.Repositories;
 
 public interface IUserRepository 
 {

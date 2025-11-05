@@ -136,9 +136,11 @@ export const Login = () => {
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
             Don't have an account?{' '}
-            <Button variant="link" className="px-1">
-              Contact Administrator
-            </Button>
+            <Link to="/register">
+              <Button variant="link" className="px-1">
+                Sign up here
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>

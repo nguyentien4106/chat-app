@@ -12,7 +12,7 @@ public class RegisterCommandHandler(UserManager<ApplicationUser> userManager) : 
     {
         var user = new ApplicationUser
         {
-            UserName = command.RegisterRequest.Email,
+            UserName = command.RegisterRequest.Email.Split("@")[0],
             Email = command.RegisterRequest.Email,
             FirstName = command.RegisterRequest.FirstName,
             LastName = command.RegisterRequest.LastName,

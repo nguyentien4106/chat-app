@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ChatApp.Application\ChatApp.Application.csproj" />
-    <ProjectReference Include="..\ChatApp.Domain\ChatApp.Domain.csproj" />
+    <ProjectReference Include="..\EzyChat.Application\EzyChat.Application.csproj" />
+    <ProjectReference Include="..\EzyChat.Domain\EzyChat.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

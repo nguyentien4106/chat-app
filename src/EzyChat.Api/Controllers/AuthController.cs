@@ -36,8 +36,14 @@ public class AuthController(IMediator _bus) : ControllerBase
     [Authorize]
     public async Task<ActionResult<AppResponse<bool>>> Logout(CancellationToken cancellationToken = new())
     {
+        // Extract user ID from claims
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return BadRequest(AppResponse<bool>.Error("Invalid user ID in token."));
+        }
         
-        return Ok(await _bus.Send(new LogoutCommand(User), cancellationToken));
+        return Ok(await _bus.Send(new LogoutCommand(userId), cancellationToken));
     }
 
     [Authorize]

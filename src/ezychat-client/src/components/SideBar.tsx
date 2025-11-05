@@ -16,15 +16,6 @@ import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { Button } from '@/components/ui/button'
 
-const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/devices', icon: Monitor, label: 'Devices' },
-  { to: '/users', icon: Users, label: 'Users' },
-  { to: '/attendance', icon: Clock, label: 'Attendance' },
-  { to: '/reports', icon: FileText, label: 'Reports' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
-]
-
 export const Sidebar = () => {
   const { isOpen, closeSidebar } = useSidebar()
 
@@ -48,7 +39,7 @@ export const Sidebar = () => {
         )}
       >
         <div className="flex items-center justify-between h-16 px-6 border-b border-border">
-          <h1 className="text-xl font-bold text-primary">Ezy.Chat Manager</h1>
+          <h1 className="text-xl font-bold text-primary">Ezy.Chat</h1>
           <Button
             variant="ghost"
             size="icon"
@@ -59,30 +50,9 @@ export const Sidebar = () => {
           </Button>
         </div>
         <nav className="p-4 space-y-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={() => {
-                // Close sidebar on mobile when navigating
-                if (window.innerWidth < 768) {
-                  closeSidebar()
-                }
-              }}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
-                  'hover:bg-accent hover:text-accent-foreground',
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground'
-                )
-              }
-            >
-              <item.icon className="w-5 h-5" />
-              <span className="font-medium">{item.label}</span>
-            </NavLink>
-          ))}
+          <h1>Auth</h1>
+          <h1>Auth1</h1>
+          <h1>Auth12ß</h1>
         </nav>
       </aside>
     </>

@@ -25,6 +25,14 @@ export interface AuthUser {
   roles: string[];
 }
 
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+}
+
 export interface ForgotPasswordRequest {
   email: string;
 }

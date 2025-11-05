@@ -1,8 +1,3 @@
-using EzyChat.Application.CQRS;
-using EzyChat.Application.Interfaces;
-using EzyChat.Application.Models;
-using EzyChat.Domain.Entities;
-using EzyChat.Domain.Repositories;
 using Microsoft.AspNetCore.Identity;
 
 namespace EzyChat.Application.Commands.Auth.Logout;
@@ -14,30 +9,19 @@ public class LogoutCommandHandler(
 {
     public async Task<AppResponse<bool>> Handle(LogoutCommand command, CancellationToken cancellationToken)
     {
-        if (!(command.User.Identity?.IsAuthenticated ?? false))
-        {
-            return AppResponse<bool>.Success(true);
-        }
-        
-        var idClaim = command.User.Claims.FirstOrDefault(x => x.Type == "Id");
-        if (idClaim == null)
-        {
-            return AppResponse<bool>.Success(false);
-        }
-        
-        if (!Guid.TryParse(idClaim.Value, out var userId))
-        {
-            return AppResponse<bool>.Success(false);
-        }
-        
-        var appUser = await userManager.GetUserAsync(command.User);
+        var appUser = await userManager.FindByIdAsync(command.UserId.ToString());
         if (appUser == null)
         {
-            return AppResponse<bool>.Success(false);
+            return AppResponse<bool>.Error("User not found.");
         }
 
         await userManager.UpdateSecurityStampAsync(appUser);
-        await refreshTokenRepository.DeleteByIdAsync(appUser.Id, cancellationToken);
+        var refreshToken = await refreshTokenRepository.GetSingleAsync(rf => rf.ApplicationUserId == appUser.Id, cancellationToken: cancellationToken);
+
+        if (refreshToken != null)
+        {
+            await refreshTokenRepository.DeleteAsync(refreshToken, cancellationToken);
+        }
 
         return AppResponse<bool>.Success(true);
     }

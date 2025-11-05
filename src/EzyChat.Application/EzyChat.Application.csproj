@@ -20,12 +20,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ChatApp.Domain\ChatApp.Domain.csproj" />
+    <ProjectReference Include="..\EzyChat.Domain\EzyChat.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="Microsoft.AspNetCore.Authorization">
-      <HintPath>..\..\..\..\..\..\..\usr\local\share\dotnet\shared\Microsoft.AspNetCore.App\8.0.11\Microsoft.AspNetCore.Authorization.dll</HintPath>
     </Reference>
   </ItemGroup>
 
