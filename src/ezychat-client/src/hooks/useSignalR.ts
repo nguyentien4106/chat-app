@@ -157,23 +157,62 @@ export const useSignalR = (): UseSignalRReturn => {
   const onMemberRemoved = useCallback((callback: (data: { groupId: string; userId: string, message: Message}) => void) => {
     if (connection) {
       connection.off('MemberRemoved');
-      connection.on('MemberRemoved', callback);
+      connection.on('MemberRemoved', async (data: { groupId: string; userId: string, message: Message}) => {
+        // Call the user's callback first
+        callback(data);
+        
+        // Automatically leave the group on the server side
+        if (connection && isConnected) {
+          try {
+            await connection.invoke('LeaveGroup', data.groupId);
+            console.log(`Automatically left group ${data.groupId} after member removal`);
+          } catch (err) {
+            console.error('Failed to leave group on server after removal:', err);
+          }
+        }
+      });
     }
-  }, [connection]);
+  }, [connection, isConnected]);
 
   const onMemberLeft = useCallback((callback: (data: { groupId: string; userId: string, message: Message }) => void) => {
     if (connection) {
       connection.off('MemberLeft');
-      connection.on('MemberLeft', callback);
+      connection.on('MemberLeft', async (data: { groupId: string; userId: string, message: Message }) => {
+        // Call the user's callback first
+        callback(data);
+        
+        // Automatically leave the group on the server side
+        if (connection && isConnected) {
+          try {
+            await connection.invoke('LeaveGroup', data.groupId);
+            console.log(`Automatically left group ${data.groupId} after leaving`);
+          } catch (err) {
+            console.error('Failed to leave group on server after leaving:', err);
+          }
+        }
+      });
     }
-  }, [connection]);
+  }, [connection, isConnected]);
 
   const onGroupDeleted = useCallback((callback: (data: { groupId: string; groupName: string }) => void) => {
     if (connection) {
       connection.off('GroupDeleted');
-      connection.on('GroupDeleted', callback);
+      connection.on('GroupDeleted', async (data: { groupId: string; groupName: string }) => {
+        // Call the user's callback first
+        callback(data);
+        
+        // Automatically leave the group on the server side when deleted
+        if (connection && isConnected) {
+          try {
+            await connection.invoke('LeaveGroup', data.groupId);
+            console.log(`Automatically left deleted group ${data.groupId}`);
+          } catch (err) {
+            console.error('Failed to leave deleted group on server:', err);
+          }
+        }
+      });
     }
-  }, [connection]); 
+  }, [connection, isConnected]); 
 
   return {
     connection,

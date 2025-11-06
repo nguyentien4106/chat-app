@@ -1,4 +1,4 @@
-namespace EzyChat.Api.Models.Requests;
+namespace EzyChat.Application.DTOs.Groups;
 
 public class CreateGroupRequest
 {

@@ -9,15 +9,8 @@ namespace EzyChat.Api.Controllers;
 // API/Controllers/UsersController.cs
 [ApiController]
 [Route("api/[controller]")]
-public class UsersController : AuthenticatedControllerBase
+public class UsersController(IMediator mediator) : AuthenticatedControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public UsersController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     [HttpGet("search")]
     public async Task<ActionResult<AppResponse<List<UserDto>>>> SearchUsers([FromQuery] string searchTerm)
     {
@@ -29,14 +22,14 @@ public class UsersController : AuthenticatedControllerBase
             CurrentUserId = userId
         };
 
-        var response = await _mediator.Send(query);
+        var response = await mediator.Send(query);
         return Ok(response);
     }
 
     [HttpGet("{userId}")]
     public async Task<ActionResult<AppResponse<UserDto>>> GetUser(Guid userId)
     {
-        var response = await _mediator.Send(new GetUserQuery { UserId = userId });
+        var response = await mediator.Send(new GetUserQuery { UserId = userId });
         
         if (!response.IsSuccess)
         {

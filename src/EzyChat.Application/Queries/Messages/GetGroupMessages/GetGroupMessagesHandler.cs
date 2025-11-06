@@ -1,7 +1,4 @@
-using EzyChat.Application.DTOs.Common;
-using EzyChat.Application.Interfaces;
-using EzyChat.Application.Models;
-using EzyChat.Domain.Repositories;
+using EzyChat.Application.DTOs.Messages;
 
 namespace EzyChat.Application.Queries.Messages.GetGroupMessages;
 

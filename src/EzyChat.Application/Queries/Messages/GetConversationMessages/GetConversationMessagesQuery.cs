@@ -1,5 +1,4 @@
-using EzyChat.Application.DTOs.Common;
-using EzyChat.Application.Models;
+using EzyChat.Application.DTOs.Messages;
 
 namespace EzyChat.Application.Queries.Messages.GetConversationMessages;
 

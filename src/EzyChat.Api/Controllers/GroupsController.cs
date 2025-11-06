@@ -1,7 +1,5 @@
 
-using System.Security.Claims;
 using EzyChat.Api.Controllers.Base;
-using EzyChat.Api.Models.Requests;
 using EzyChat.Application.Commands.Groups.AddUserToGroup;
 using EzyChat.Application.Commands.Groups.CreateGroup;
 using EzyChat.Application.Commands.Groups.DeleteGroup;
@@ -10,10 +8,10 @@ using EzyChat.Application.Commands.Groups.JoinGroup;
 using EzyChat.Application.Commands.Groups.LeaveGroup;
 using EzyChat.Application.Commands.Groups.RemoveMember;
 using EzyChat.Application.DTOs.Common;
+using EzyChat.Application.DTOs.Groups;
 using EzyChat.Application.Models;
 using EzyChat.Application.Queries.Groups.GetGroupInfo;
 using EzyChat.Application.Queries.Groups.GetUserGroups;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 
 namespace EzyChat.Api.Controllers;

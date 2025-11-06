@@ -1,4 +1,5 @@
 using EzyChat.Application.DTOs.Common;
+using EzyChat.Application.DTOs.Messages;
 using EzyChat.Application.Hubs;
 using EzyChat.Application.Models;
 using Microsoft.AspNetCore.SignalR;
@@ -23,7 +24,7 @@ public class ConversationMessageStrategy(
         var message = command.Adapt<Message>();
         
         // Get or create conversation
-        var conversation = await GetOrCreateConversationAsync(command, cancellationToken);
+        var (conversation, isNewConversation) = await GetOrCreateConversationAsync(command, cancellationToken);
         message.ConversationId = conversation.Id;
         
         await messageRepository.AddAsync(message, cancellationToken);
@@ -36,7 +37,9 @@ public class ConversationMessageStrategy(
 
         var messageDto = message.Adapt<MessageDto>();
         messageDto.ReceiverId = command.ReceiverId ?? Guid.Empty;
-        messageDto.SenderUserName = message.Sender?.UserName ?? string.Empty;
+        messageDto.SenderUserName = message.Sender.UserName ?? string.Empty;
+        messageDto.IsNewConversation = isNewConversation;
+        messageDto.SenderFullName = message.Sender.GetFullName() ?? string.Empty;
         
         // Send via SignalR to the specific user
         if (command.ReceiverId.HasValue)
@@ -48,7 +51,7 @@ public class ConversationMessageStrategy(
         return AppResponse<MessageDto>.Success(messageDto);
     }
 
-    private async Task<Conversation> GetOrCreateConversationAsync(SendMessageCommand command, CancellationToken cancellationToken)
+    private async Task<(Conversation, bool)> GetOrCreateConversationAsync(SendMessageCommand command, CancellationToken cancellationToken)
     {
         // If ConversationId is provided, get existing conversation
         if (command.ConversationId.HasValue)
@@ -60,7 +63,7 @@ public class ConversationMessageStrategy(
             
             if (existingConversation != null)
             {
-                return existingConversation;
+                return (existingConversation, false);
             }
         }
 
@@ -76,7 +79,7 @@ public class ConversationMessageStrategy(
             cancellationToken);
     }
 
-    private async Task<Conversation> GetOrCreateConversationAsync(
+    private async Task<(Conversation, bool)> GetOrCreateConversationAsync(
         Guid senderId, 
         Guid receiverId, 
         CancellationToken cancellationToken)
@@ -95,8 +98,10 @@ public class ConversationMessageStrategy(
                 LastMessageAt = DateTime.Now
             };
             await conversationRepository.AddAsync(conversation, cancellationToken);
+
+            return (conversation, true);
         }
 
-        return conversation;
+        return (conversation, false);
     }
 }

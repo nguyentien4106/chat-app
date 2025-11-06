@@ -10,19 +10,25 @@ public class GenerateLinkHandler(
 ) : ICommandHandler<GenerateLinkCommand, AppResponse<string>>
 {
 
+    private const int OneDay = 1;
+    
     public async Task<AppResponse<string>> Handle(GenerateLinkCommand request, CancellationToken cancellationToken)
     {
         var group = await groupRepository.GetByIdAsync(request.GroupId, cancellationToken: cancellationToken);
         if (group == null)
+        {
             return AppResponse<string>.Fail("Group not found");
+        }
 
         var member = await groupMemberRepository.GetSingleAsync(gm => gm.GroupId == request.GroupId && gm.UserId == request.RequestedById, cancellationToken: cancellationToken);
 
         if (member == null || !member.IsAdmin)
+        {
             return AppResponse<string>.Fail("Only admins can generate invite links");
-
+        }
+        
         group.InviteCode = Guid.NewGuid().ToString("N").Substring(0, 8);
-        group.InviteCodeExpiresAt = DateTime.Now.AddDays(7);
+        group.InviteCodeExpiresAt = DateTime.Now.AddDays(OneDay);
 
         await groupRepository.UpdateAsync(group, cancellationToken: cancellationToken);
 

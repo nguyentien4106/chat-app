@@ -32,6 +32,8 @@ export interface Message {
   createdAt: Date;
   isRead: boolean;
   groupName: string
+  isNewConversation: boolean;
+  senderFullName: string;
 }
 
 export interface Conversation {

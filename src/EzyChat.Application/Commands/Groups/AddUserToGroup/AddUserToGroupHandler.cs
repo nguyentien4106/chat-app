@@ -1,21 +1,19 @@
 using EzyChat.Application.Hubs;
 using EzyChat.Application.Interfaces;
-using EzyChat.Application.Models;
 using EzyChat.Domain.Enums;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
 using EzyChat.Application.DTOs.Common;
+using EzyChat.Application.DTOs.Messages;
 
 namespace EzyChat.Application.Commands.Groups.AddUserToGroup;
-
 
 public class AddMemberToGroupHandler(
     IRepository<GroupMember> groupMemberRepository,
     IRepository<Group> groupRepository,
     IRepository<Message> messageRepository,
-    IHubContext<ChatHub> hubContext,
-    IUserRepository userRepository
+    IUserRepository userRepository,
+    ISignalRService signalRService
 ) : ICommandHandler<AddMemberToGroupCommand, AppResponse<Unit>>
 {
 
@@ -24,11 +22,6 @@ public class AddMemberToGroupHandler(
         var group = await groupRepository.GetByIdAsync(request.GroupId, cancellationToken: cancellationToken);
         if (group == null)
             return AppResponse<Unit>.Fail("Group not found");
-
-        // var addedBy = await groupMemberRepository.GetByIdAsync(request.AddedById, cancellationToken: cancellationToken);
-
-        // if (addedBy == null || !addedBy.IsAdmin)
-        //     return AppResponse<Unit>.Fail("Only admins can add members");
 
         var newMember = await userRepository.GetUserByUserNameAsync(request.UserName, cancellationToken: cancellationToken);
         if (newMember == null)
@@ -41,7 +34,7 @@ public class AddMemberToGroupHandler(
         if (existingMember != null)
             return AppResponse<Unit>.Fail("User is already a member");
 
-        var member = new GroupMember
+        var groupMember = new GroupMember
         {
             Id = Guid.NewGuid(),
             GroupId = request.GroupId,
@@ -50,7 +43,7 @@ public class AddMemberToGroupHandler(
             IsAdmin = false
         };
 
-        await groupMemberRepository.AddAsync(member, cancellationToken);
+        await groupMemberRepository.AddAsync(groupMember, cancellationToken);
 
         // Create notification message
         var notificationMessage = new Message
@@ -61,20 +54,32 @@ public class AddMemberToGroupHandler(
             SenderId = newMember.Id,
             GroupId = request.GroupId,
             CreatedAt = DateTime.Now,
-            IsRead = false
         };
 
         await messageRepository.AddAsync(notificationMessage, cancellationToken);
         var groupDto = group.Adapt<GroupDto>();
-        var messageDto = notificationMessage.Adapt<MessageDto>();
-
+        var messageDto = new MessageDto
+        {
+            Id = notificationMessage.Id,
+            Content = notificationMessage.Content,
+            MessageType = notificationMessage.MessageType,
+            SenderId = notificationMessage.SenderId,
+            GroupId = notificationMessage.GroupId,
+        };
+        
         groupDto.MemberCount += 1;
 
-        await hubContext.Clients.Group(request.GroupId.ToString())
-            .SendAsync("MemberAdded", new { GroupId = request.GroupId, UserId = newMember.Id, NewMemberName = newMember.UserName, Group = groupDto, Message = messageDto }, cancellationToken);
-
-        await hubContext.Clients.User(newMember.Id.ToString())
-            .SendAsync("MemberAdded", new { GroupId = request.GroupId, UserId = newMember.Id, NewMemberName = newMember.UserName, Group = groupDto, Message = messageDto }, cancellationToken);
+        object data = new
+        {
+            GroupId = request.GroupId,
+            UserId = newMember.Id,
+            NewMemberName = newMember.UserName,
+            Group = groupDto,
+            Message = messageDto
+        };
+        
+        await signalRService.NotifyGroupAsync(request.GroupId.ToString(), "MemberAdded", data, cancellationToken);
+        await signalRService.NotifyUserAsync(newMember.Id.ToString(), "MemberAdded", data, cancellationToken);
 
         return AppResponse<Unit>.Success(Unit.Value);
     }

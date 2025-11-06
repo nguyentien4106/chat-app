@@ -1,4 +1,5 @@
 using EzyChat.Application.DTOs.Common;
+using EzyChat.Application.DTOs.Messages;
 using EzyChat.Application.Hubs;
 using EzyChat.Application.Interfaces;
 using EzyChat.Application.Models;
@@ -21,20 +22,22 @@ public class RemoveMemberFromGroupHandler(
     {
         var group = await groupRepository.GetByIdAsync(request.GroupId, cancellationToken: cancellationToken);
         if (group == null)
+        {
             return AppResponse<Unit>.Fail("Group not found");
-
+        }
         var removedBy = await groupMemberRepository.GetSingleAsync(
             gm => gm.GroupId == request.GroupId && gm.UserId == request.RemovedById,
-            includeProperties: new[] { "User" },
+            includeProperties: ["User"],
             cancellationToken: cancellationToken
         );
 
         if (removedBy == null || !removedBy.IsAdmin)
+        {
             return AppResponse<Unit>.Fail("Only admins can remove members");
-
+        }
         var memberToRemove = await groupMemberRepository.GetSingleAsync(
             gm => gm.GroupId == request.GroupId && gm.UserId == request.UserId,
-            includeProperties: new[] { "User" },
+            includeProperties: ["User"],
             cancellationToken: cancellationToken
         );
 
@@ -55,8 +58,6 @@ public class RemoveMemberFromGroupHandler(
             MessageType = MessageTypes.Notification,
             SenderId = request.RemovedById,
             GroupId = request.GroupId,
-            CreatedAt = DateTime.Now,
-            IsRead = false
         };
 
         await messageRepository.AddAsync(notificationMessage, cancellationToken);

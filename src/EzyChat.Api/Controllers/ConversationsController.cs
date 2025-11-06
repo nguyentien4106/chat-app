@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using EzyChat.Api.Controllers.Base;
 using EzyChat.Application.Commands.Messages.MarkRead;
 using EzyChat.Application.DTOs.Common;
+using EzyChat.Application.DTOs.Messages;
 using EzyChat.Application.Models;
 using EzyChat.Application.Queries.Conversations.GetMessagesByConversationId;
 using EzyChat.Application.Queries.Conversations.GetUserConversations;

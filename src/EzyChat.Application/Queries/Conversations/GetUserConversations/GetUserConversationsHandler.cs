@@ -18,7 +18,7 @@ public class GetUserConversationsHandler(
         var pagedConversations = await pagedConversationRepository.GetPagedResultAsync(
             request,
             filter: c => c.SenderId == request.UserId || c.ReceiverId == request.UserId,
-            includeProperties: [],
+            includeProperties: ["Messages"],
             cancellationToken: cancellationToken
         );
 
@@ -30,8 +30,7 @@ public class GetUserConversationsHandler(
             var otherUser = await userRepository.GetByIdAsync(otherUserId, cancellationToken: cancellationToken);
             if (otherUser == null) continue;
 
-            var lastMessage = context.Messages
-                .Where(m => m.ConversationId == conv.Id)
+            var lastMessage = conv.Messages
                 .OrderByDescending(m => m.CreatedAt)
                 .FirstOrDefault();
             

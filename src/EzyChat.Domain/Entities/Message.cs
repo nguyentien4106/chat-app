@@ -10,6 +10,7 @@ public class Message : Entity<Guid>
     public string? FileUrl { get; set; }
     public string? FileName { get; set; }
     public string? FileType { get; set; }
+    
     public long? FileSize { get; set; }
     public Guid SenderId { get; set; }
     public ApplicationUser Sender { get; set; } = null!;

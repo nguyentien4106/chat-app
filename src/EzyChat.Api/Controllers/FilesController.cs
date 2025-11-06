@@ -1,35 +1,21 @@
 
 using EzyChat.Api.Controllers.Base;
 using EzyChat.Application.Commands.Messages.SendMessage;
-using EzyChat.Application.DTOs.Common;
+using EzyChat.Application.DTOs.Messages;
 using EzyChat.Application.Interfaces;
 using EzyChat.Application.Models;
 using EzyChat.Domain.Enums;
-
-namespace EzyChat.Api.Controllers;
-
-// API/Controllers/FilesController.cs
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class FilesController : AuthenticatedControllerBase
+public class FilesController(IStorageService storageService, IMediator mediator) : AuthenticatedControllerBase
 {
-    private readonly IStorageService _storageService;
-    private readonly IMediator _mediator;
     private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp" };
     private static readonly string[] AllowedFileExtensions = { ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".txt", ".zip", ".rar" };
     private const long MaxFileSize = 10 * 1024 * 1024; // 10MB
     private const long MaxImageSize = 5 * 1024 * 1024; // 5MB
-
-    public FilesController(IStorageService storageService, IMediator mediator)
-    {
-        _storageService = storageService;
-        _mediator = mediator;
-    }
 
     [HttpPost("upload")]
     [RequestSizeLimit(10 * 1024 * 1024)] // 10MB
@@ -56,7 +42,7 @@ public class FilesController : AuthenticatedControllerBase
                 try
                 {
                     await using var stream = file.OpenReadStream();
-                    var fileUrl = await _storageService.UploadFileAsync(stream, file.FileName, file.ContentType);
+                    var fileUrl = await storageService.UploadFileAsync(stream, file.FileName, file.ContentType);
                     var result = AppResponse<FileUploadResponse>.Success(new FileUploadResponse
                     {
                         FileUrl = fileUrl,
@@ -94,7 +80,7 @@ public class FilesController : AuthenticatedControllerBase
             FileSize = request.FileSize
         };
 
-        var response = await _mediator.Send(command);
+        var response = await mediator.Send(command);
         return Ok(response);
     }
 
@@ -102,7 +88,7 @@ public class FilesController : AuthenticatedControllerBase
     public async Task<ActionResult> DeleteFile(string fileUrl)
     {
         var decodedUrl = Uri.UnescapeDataString(fileUrl);
-        var result = await _storageService.DeleteFileAsync(decodedUrl);
+        var result = await storageService.DeleteFileAsync(decodedUrl);
         
         if (result)
         {
@@ -114,23 +100,3 @@ public class FilesController : AuthenticatedControllerBase
 
 }
 
-public class FileUploadResponse
-{
-    public string FileUrl { get; set; } = string.Empty;
-    public string FileName { get; set; } = string.Empty;
-    public string FileType { get; set; } = string.Empty;
-    public long FileSize { get; set; }
-    public MessageTypes MessageType { get; set; }
-}
-
-public class SendFileMessageRequest
-{
-    public Guid? ConversationId { get; set; }
-    public Guid? GroupId { get; set; }
-    public string? Content { get; set; }
-    public MessageTypes Type { get; set; }
-    public string FileUrl { get; set; } = string.Empty;
-    public string FileName { get; set; } = string.Empty;
-    public string FileType { get; set; } = string.Empty;
-    public long FileSize { get; set; }
-}

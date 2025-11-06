@@ -1,4 +1,5 @@
 using EzyChat.Application.DTOs.Common;
+using EzyChat.Application.DTOs.Messages;
 using EzyChat.Application.Interfaces;
 using EzyChat.Application.Models;
 

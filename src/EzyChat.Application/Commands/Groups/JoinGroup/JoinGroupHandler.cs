@@ -1,3 +1,6 @@
+using EzyChat.Application.DTOs.Common;
+using EzyChat.Application.DTOs.Messages;
+using EzyChat.Application.Interfaces;
 using EzyChat.Domain.Enums;
 using MediatR;
 
@@ -7,7 +10,8 @@ public class JoinGroupHandler(
     IRepository<Group> groupRepository,
     IRepository<GroupMember> groupMemberRepository,
     IRepository<Message> messageRepository,
-    IUserRepository userRepository
+    IUserRepository userRepository,
+    ISignalRService signalRService
 ) : ICommandHandler<JoinGroupByInviteCommand, AppResponse<Unit>>
 {
 
@@ -27,13 +31,17 @@ public class JoinGroupHandler(
         var existingMember = await groupMemberRepository.GetSingleAsync(gm => gm.GroupId == group.Id && gm.UserId == request.UserId, cancellationToken: cancellationToken);
 
         if (existingMember != null)
+        {
             return AppResponse<Unit>.Fail("User is already a member");
+        }
 
-        var user = await userRepository.GetByIdAsync(request.UserId, cancellationToken: cancellationToken);
-        if (user == null)
+        var newMember = await userRepository.GetByIdAsync(request.UserId, cancellationToken: cancellationToken);
+        if (newMember == null)
+        {
             return AppResponse<Unit>.Fail("User not found");
-
-        var member = new GroupMember
+        }
+        
+        var groupMember = new GroupMember
         {
             Id = Guid.NewGuid(),
             GroupId = group.Id,
@@ -42,21 +50,43 @@ public class JoinGroupHandler(
             IsAdmin = false
         };
 
-        await groupMemberRepository.AddAsync(member, cancellationToken: cancellationToken);
+        await groupMemberRepository.AddAsync(groupMember, cancellationToken: cancellationToken);
 
         // Create notification message
         var notificationMessage = new Message
         {
             Id = Guid.NewGuid(),
-            Content = $"{user.UserName} joined the group",
+            Content = $"{newMember.UserName} joined the group via invite code.",
             MessageType = MessageTypes.Notification,
-            SenderId = request.UserId,
+            SenderId = newMember.Id,
             GroupId = group.Id,
             CreatedAt = DateTime.Now,
-            IsRead = false
         };
-
+        
         await messageRepository.AddAsync(notificationMessage, cancellationToken);
+
+        var groupDto = group.Adapt<GroupDto>();
+        var messageDto = new MessageDto
+        {
+            Id = notificationMessage.Id,
+            Content = notificationMessage.Content,
+            MessageType = notificationMessage.MessageType,
+            SenderId = notificationMessage.SenderId,
+            GroupId = notificationMessage.GroupId,
+
+        };
+        groupDto.MemberCount += 1;
+
+        object data = new
+        {
+            GroupId = group.Id,
+            UserId = newMember.Id,
+            NewMemberName = newMember.UserName,
+            Group = groupDto,
+            Message = messageDto
+        };
+        
+        await signalRService.NotifyGroupAsync(group.Id.ToString(), "MemberAdded", data, cancellationToken);
 
         return AppResponse<Unit>.Success(Unit.Value);
     }

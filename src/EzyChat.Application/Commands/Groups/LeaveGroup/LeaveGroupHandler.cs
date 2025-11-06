@@ -1,4 +1,5 @@
 using EzyChat.Application.DTOs.Common;
+using EzyChat.Application.DTOs.Messages;
 using EzyChat.Application.Hubs;
 using EzyChat.Application.Interfaces;
 using EzyChat.Application.Models;
@@ -13,7 +14,8 @@ public class LeaveGroupHandler(
     IRepository<GroupMember> groupMemberRepository,
     IRepository<Group> groupRepository,
     IRepository<Message> messageRepository,
-    IHubContext<ChatHub> hubContext
+    IHubContext<ChatHub> hubContext,
+    ISignalRService signalRService
 ) : ICommandHandler<LeaveGroupCommand, AppResponse<Unit>>
 {
     public async Task<AppResponse<Unit>> Handle(LeaveGroupCommand request, CancellationToken cancellationToken)
@@ -24,17 +26,19 @@ public class LeaveGroupHandler(
 
         var member = await groupMemberRepository.GetSingleAsync(
             gm => gm.GroupId == request.GroupId && gm.UserId == request.UserId,
-            includeProperties: new[] { "User" },
+            includeProperties: ["User"],
             cancellationToken: cancellationToken
         );
 
         if (member == null)
+        {
             return AppResponse<Unit>.Fail("You are not a member of this group");
-
+        }
         // Prevent the group creator from leaving
         if (member.UserId == group.CreatedById)
+        {
             return AppResponse<Unit>.Fail("Group creator cannot leave the group. Please transfer ownership or delete the group.");
-
+        }
         await groupMemberRepository.DeleteAsync(member, cancellationToken: cancellationToken);
 
         // Create notification message
@@ -45,15 +49,19 @@ public class LeaveGroupHandler(
             MessageType = MessageTypes.Notification,
             SenderId = request.UserId,
             GroupId = request.GroupId,
-            CreatedAt = DateTime.Now,
-            IsRead = false
         };
 
         await messageRepository.AddAsync(notificationMessage, cancellationToken);
-        var message = notificationMessage.Adapt<MessageDto>();
-        
-        await hubContext.Clients.Group(request.GroupId.ToString())
-            .SendAsync("MemberLeft", new { GroupId = request.GroupId, UserId = request.UserId, MemberName = member.User.UserName, Message = message }, cancellationToken);
+        var messageDto = notificationMessage.Adapt<MessageDto>();
+        object data = new
+        {
+            GroupId = request.GroupId,
+            UserId = request.UserId,
+            MemberName = member.User.UserName,
+            Group = group.Adapt<GroupDto>(),
+            Message = messageDto
+        };
+        await signalRService.NotifyGroupAsync(request.GroupId.ToString(), "MemberLeft", data, cancellationToken);
 
         return AppResponse<Unit>.Success(Unit.Value);
     }

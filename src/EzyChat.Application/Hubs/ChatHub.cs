@@ -1,31 +1,19 @@
 using System.Security.Claims;
 using EzyChat.Application.Commands.Messages.SendMessage;
-using EzyChat.Application.DTOs.Common;
-using EzyChat.Application.Queries.Conversations.GetUserConversations;
-using EzyChat.Application.Queries.Groups.GetUserGroups;
-using EzyChat.Domain.Enums;
+using EzyChat.Application.DTOs.Messages;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
-// Infrastructure/Hubs/ChatHub.cs
-
 namespace EzyChat.Application.Hubs;
 
-
 [Authorize]
-public class ChatHub : Hub
+public class ChatHub(
+    IMediator mediator,
+    IRepository<Conversation> conversationRepository,
+    IRepository<Group> groupRepository)
+    : Hub
 {
-    private readonly IMediator _mediator;
-    private readonly IRepository<Conversation> _conversationRepository;
-    private readonly IRepository<Group> _groupRepository;
-    public ChatHub(IMediator mediator, IRepository<Conversation> conversationRepository, IRepository<Group> groupRepository)
-    {
-        _mediator = mediator;
-        _conversationRepository = conversationRepository;
-        _groupRepository = groupRepository;
-    }
-
     private string? GetUserId()
     {
         // Try ClaimTypes.NameIdentifier first
@@ -54,20 +42,10 @@ public class ChatHub : Hub
             await Groups.AddToGroupAsync(Context.ConnectionId, userId);
 
             // Join user to all their groups
-            var groups = await _groupRepository.GetAllAsync(g => g.Members.Any(m => m.UserId == Guid.Parse(userId)));   
+            var groups = await groupRepository.GetAllAsync(g => g.Members.Any(m => m.UserId == Guid.Parse(userId)));   
             foreach (var group in groups)
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, group.Id.ToString());
-            }
-
-            // Join user to all their conversations
-            var conversations = await _conversationRepository.GetAllAsync(c =>
-                c.SenderId == Guid.Parse(userId) || c.ReceiverId == Guid.Parse(userId)
-            );
-            
-            foreach (var conversation in conversations)
-            {
-                await Groups.AddToGroupAsync(Context.ConnectionId, conversation.Id.ToString());
             }
         }
 
@@ -91,7 +69,7 @@ public class ChatHub : Hub
 
         var command = request.Adapt<SendMessageCommand>();
 
-        return await _mediator.Send(command);
+        return await mediator.Send(command);
     }
 
     public async Task JoinGroup(Guid groupId)
@@ -102,12 +80,6 @@ public class ChatHub : Hub
     public async Task LeaveGroup(Guid groupId)
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupId.ToString());
-    }
-
-    public async Task MarkAsRead(Guid messageId)
-    {
-        // Implement mark as read logic
-        await Clients.Caller.SendAsync("MessageRead", messageId);
     }
 
     public async Task UserTyping(Guid? receiverId, Guid? groupId)
@@ -129,29 +101,4 @@ public class ChatHub : Hub
                 .SendAsync("UserTyping", new { UserId = userId });
         }
     }
-
-    public async Task OnNewConversation(Guid groupId)
-    {
-        await Groups.AddToGroupAsync(Context.ConnectionId, groupId.ToString());
-    }
-}
-
-public class SendMessageRequest
-{
-    public Guid SenderId { get; set; }
-    
-    public Guid? ReceiverId { get; set; }
-    public Guid? ConversationId { get; set; }
-    public Guid? GroupId { get; set; }
-    public string? Content { get; set; } = string.Empty;
-    
-    public MessageTypes MessageType { get; set; }
-    
-    public string? FileUrl { get; set; }
-    
-    public string? FileName { get; set; }
-    
-    public string? FileType { get; set; }
-    
-    public long FileSize { get; set; }
 }

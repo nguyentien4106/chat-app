@@ -1,15 +1,12 @@
-using System.Security.Claims;
 using EzyChat.Api.Controllers.Base;
 using EzyChat.Application.Commands.Messages.SendMessage;
-using EzyChat.Application.DTOs.Common;
-using EzyChat.Application.Hubs;
+using EzyChat.Application.DTOs.Messages;
 using EzyChat.Application.Models;
 using EzyChat.Application.Queries.Messages.GetConversationMessages;
 using EzyChat.Application.Queries.Messages.GetGroupMessages;
 using Microsoft.AspNetCore.Authorization;
 
 namespace EzyChat.Api.Controllers;
-
 
 [ApiController]
 [Route("api/[controller]")]

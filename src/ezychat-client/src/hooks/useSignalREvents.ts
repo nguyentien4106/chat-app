@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import type { HubConnection } from '@microsoft/signalr';
-import { ActiveChat, Message, Group } from '@/types/chat.types';
+import { ActiveChat, Message, Group, Conversation } from '@/types/chat.types';
 
 interface UseSignalREventsProps {
   connection: HubConnection | null;
@@ -18,6 +18,7 @@ interface UseSignalREventsProps {
   onMemberRemoved: (callback: (data: any) => void) => void;
   onMemberLeft: (callback: (data: any) => void) => void;
   onGroupDeleted: (callback: (data: any) => void) => void;
+  addConversation: (conversation: Conversation  ) => void;
 }
 
 export const useSignalREvents = ({
@@ -34,7 +35,8 @@ export const useSignalREvents = ({
   onMemberAdded,
   onMemberRemoved,
   onMemberLeft,
-  onGroupDeleted
+  onGroupDeleted,
+  addConversation
 }: UseSignalREventsProps) => {
 
   const isCurrentUser = useCallback((userId: string): boolean => {
@@ -53,24 +55,49 @@ export const useSignalREvents = ({
     return groups.some(group => group.id === groupId);
   }, [groups]);
 
+  const thisUserReceivedMessage = useCallback((message: Message): boolean => {
+    return message.receiverId === currentUserId;
+  }, [currentUserId]);
+
+  const thisUserOpeningConversation = useCallback((conversationId?: string): boolean => {
+    return activeChat?.type === 'user' && activeChat.id === conversationId;
+  }, [activeChat]);
+
+  const thisUserOpeningGroup = useCallback((groupId?: string): boolean => {
+    return activeChat?.type === 'group' && activeChat.groupId === groupId;
+  }, [activeChat]);
+
   useEffect(() => {
     if (!connection) return;
 
     onReceiveMessage((message) => {
-      if (message.receiverId === currentUserId) {
+      console.log('Received message via SignalR:', message);
+      if(message.isNewConversation && thisUserReceivedMessage(message)) {
+        // New conversation started
+        addConversation({
+          id: message.conversationId,
+          lastMessage: message.content ?? "",
+          lastMessageAt: message.createdAt,
+          userId: message.senderId!,
+          userName: message.senderUserName!,
+          userFullName: message.senderFullName!,
+          unreadCount: 1,
+        })
+      }
+      else if (thisUserReceivedMessage(message)) {
         onLastMessageEvent && onLastMessageEvent(message);
       }
       
       if (
         activeChat &&
-        ((activeChat.type === 'user' && (message.receiverId === currentUserId)) ||
-          (activeChat.type === 'group' && message.groupId === activeChat.groupId))
+        ((thisUserOpeningConversation(message.conversationId) && thisUserReceivedMessage(message)) ||
+          (thisUserOpeningGroup(message.groupId) && activeChat.id === message.groupId))
       ) {
         onMessagesEvent(message);
       }
 
       // Show notification for direct messages
-      if (currentUserId && message.receiverId === currentUserId && message.senderId !== currentUserId) {
+      if (currentUserId && thisUserReceivedMessage(message) && message.senderId !== currentUserId) {
         toast.info(message.senderUserName, {
           description: message.content,
           duration: 5000,
@@ -78,7 +105,7 @@ export const useSignalREvents = ({
       }
       
       // Show notification for group messages
-      if (message.groupId && message.senderId !== currentUserId && hasGroupNotification(message.groupId) && !groupOpening(message.groupId)) {
+      if (message.groupId && message.senderId !== currentUserId && hasGroupNotification(message.groupId) && !thisUserOpeningGroup(message.groupId)) {
         toast.info(`${message.groupName}`, {
           description: `${message.senderUserName}: ${message.content}`,
           duration: 5000,
@@ -87,6 +114,7 @@ export const useSignalREvents = ({
     });
     
     onMemberAdded((data) => {
+      console.log('Member added via SignalR:', data);
       onGroupMemberEvent({ groupId: data.groupId, event: 'memberAdded' });
 
       if (groupOpening(data.groupId)) {
@@ -121,6 +149,7 @@ export const useSignalREvents = ({
       if (isCurrentUser(data.userId)) {
         toast.info('You have left the group');
         setActiveChat(null);
+        onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
       }
 
       if (groupOpening(data.groupId)) {
@@ -129,9 +158,7 @@ export const useSignalREvents = ({
     });
 
     onGroupDeleted((data) => {
-      console.log(data)
       onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
-
     })
   }, [
     connection,

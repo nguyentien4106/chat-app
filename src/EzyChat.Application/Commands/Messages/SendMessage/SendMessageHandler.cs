@@ -1,6 +1,7 @@
 using EzyChat.Application.DTOs.Common;
 using EzyChat.Application.Models;
 using EzyChat.Application.Commands.Messages.SendMessage.Strategy;
+using EzyChat.Application.DTOs.Messages;
 
 namespace EzyChat.Application.Commands.Messages.SendMessage;
 
