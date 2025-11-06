@@ -7,9 +7,7 @@ import { toast } from 'sonner';
 import type { AuthUser, AuthContextType } from '@/types/auth';
 import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
-
-const ACCESSTOKEN_KEY = "chat_app_access_token";
-const REFRESHTOKEN_KEY = "chat_app_refresh_token";
+import { ACCESSTOKEN_KEY, REFRESHTOKEN_KEY } from '@/constants/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

@@ -3,12 +3,6 @@
 // src/components/Sidebar.tsx
 // ==========================================
 import { 
-  LayoutDashboard, 
-  Monitor, 
-  Users, 
-  Clock, 
-  FileText, 
-  Settings,
   X
 } from 'lucide-react'
 import { cn } from '@/lib/utils'

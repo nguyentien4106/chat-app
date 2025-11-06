@@ -30,9 +30,8 @@ export const authService = {
     return apiService.get<AuthUser>('/api/auth/me/me');
   },
 
-  refreshToken: async (): Promise<LoginResponse> => {
-    // return apiService.post<{ token: string }>('/api/auth/refresh');
-    return null as any;
+  refreshToken: async (refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> => {
+    return apiService.post<{ accessToken: string; refreshToken: string }>('/api/auth/refresh', { refreshToken });
   },
   forgotPassword: async (email: string): Promise<ForgotPasswordResponse> => {
     // For demo purposes - replace with actual API endpoint
