@@ -3,7 +3,7 @@ using EzyChat.Application.Commands.Messages.MarkRead;
 using EzyChat.Application.DTOs.Common;
 using EzyChat.Application.DTOs.Messages;
 using EzyChat.Application.Models;
-using EzyChat.Application.Queries.Conversations.GetMessagesByConversationId;
+using EzyChat.Application.Queries.Conversations.GetConversationMessages;
 using EzyChat.Application.Queries.Conversations.GetUserConversations;
 using Microsoft.AspNetCore.Authorization;
 
@@ -47,16 +47,13 @@ public class ConversationsController(IMediator mediator) : AuthenticatedControll
     [HttpGet("{conversationId}/messages")]
     public async Task<ActionResult<AppResponse<PagedResult<MessageDto>>>> GetConversationMessages(
         Guid conversationId,
-        [FromQuery] PaginationRequest request)
+        [FromQuery] DateTime? beforeDateTime)
     {
-        var query = new GetMessagesByConversationIdQuery
+        var query = new GetConversationMessagesQuery
         {
             ConversationId = conversationId,
             CurrentUserId = CurrentUserId,
-            PageNumber = request.PageNumber,
-            PageSize = request.PageSize,
-            SortBy = request.SortBy,
-            SortOrder = request.SortOrder
+            BeforeDateTime = beforeDateTime ?? DateTime.Now
         };
 
         var response = await mediator.Send(query);

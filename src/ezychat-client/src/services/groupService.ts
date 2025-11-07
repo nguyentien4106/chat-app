@@ -1,6 +1,7 @@
 import { Group, GroupInfo, InviteLinkResponse, Message } from "@/types/chat.types";
 import { PaginatedResponse, PaginationRequest } from "@/types";
 import { apiService } from "./api";
+import { formatISO } from "date-fns/formatISO";
 
 export const groupService = {
   getUserGroups: (params?: PaginationRequest) => {
@@ -21,13 +22,13 @@ export const groupService = {
     return apiService.get<PaginatedResponse<Group>>(`/api/groups${queryString}`);
   },
 
-  getGroupMessages: (groupId: string, params?: PaginationRequest) => {
+  getGroupMessages: (groupId: string, beforeDateTime?: string) => {
     const queryParams = new URLSearchParams();
-    if (params?.pageNumber !== undefined) {
-      queryParams.append('pageNumber', params.pageNumber.toString());
+    // Use current time if no beforeDateTime provided (initial load)
+    if (beforeDateTime) {
+      const dateTime = formatISO(new Date(beforeDateTime));
+      queryParams.append('beforeDateTime', dateTime);
     }
-    queryParams.append('pageSize', "20");
-    queryParams.append('sortOrder', 'desc');
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
     return apiService.get<PaginatedResponse<Message>>(
       `/api/groups/${groupId}/messages${queryString}`

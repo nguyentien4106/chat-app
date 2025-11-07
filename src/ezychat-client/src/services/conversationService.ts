@@ -24,13 +24,12 @@ export const conversationService = {
     apiService.post<Conversation>('/api/conversations', { userId }),
   markAsRead: (conversationId: string) =>
     apiService.post<number>(`/api/conversations/${conversationId}/mark-read`, {}),
-  getConversationMessages: (conversationId: string, params?: PaginationRequest) => {
+  getConversationMessages: (conversationId: string, beforeDateTime?: string) => {
     const queryParams = new URLSearchParams();
-    if (params?.pageNumber !== undefined) {
-        queryParams.append('pageNumber', params.pageNumber.toString());
+    // Use current time if no beforeDateTime provided (initial load)
+    if (beforeDateTime) {
+      queryParams.append('beforeDateTime', beforeDateTime);
     }
-    queryParams.append('pageSize', "20");
-    queryParams.append('sortOrder', 'desc');
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
     return apiService.get<PaginatedResponse<Message>>(
       `/api/conversations/${conversationId}/messages${queryString}`

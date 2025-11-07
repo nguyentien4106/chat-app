@@ -71,7 +71,6 @@ export const useSignalREvents = ({
     if (!connection) return;
 
     onReceiveMessage((message) => {
-      console.log('Received message via SignalR:', message);
       if(message.isNewConversation && thisUserReceivedMessage(message)) {
         // New conversation started
         addConversation({
@@ -114,7 +113,7 @@ export const useSignalREvents = ({
     });
     
     onMemberAdded((data) => {
-      console.log('Member added via SignalR:', data);
+      console.log('Member added to group signalr event', data);
       onGroupMemberEvent({ groupId: data.groupId, event: 'memberAdded' });
 
       if (groupOpening(data.groupId)) {

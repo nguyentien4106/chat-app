@@ -4,13 +4,14 @@ using EzyChat.Application.DTOs.Messages;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 
 namespace EzyChat.Application.Hubs;
 
 [Authorize]
 public class ChatHub(
     IMediator mediator,
-    IRepository<Conversation> conversationRepository,
+    ILogger<ChatHub> logger,
     IRepository<Group> groupRepository)
     : Hub
 {
@@ -54,6 +55,7 @@ public class ChatHub(
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        logger.LogInformation($"User ({GetUserId()}) disconnected");   
         await base.OnDisconnectedAsync(exception);
     }
 
@@ -74,11 +76,13 @@ public class ChatHub(
 
     public async Task JoinGroup(Guid groupId)
     {
+        logger.LogInformation($"User ({GetUserId()}) Joining group {groupId}");   
         await Groups.AddToGroupAsync(Context.ConnectionId, groupId.ToString());
     }
 
     public async Task LeaveGroup(Guid groupId)
     {
+        logger.LogInformation($"User ({GetUserId()}) leaving group {groupId}");   
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupId.ToString());
     }
 

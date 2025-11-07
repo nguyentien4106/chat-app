@@ -7,6 +7,7 @@ import { groupService } from '@/services/groupService';
 import { useAuth } from '@/contexts/AuthContext';
 import { PaginationRequest } from '@/types';
 import { defaultPaginationRequest } from '@/constants';
+import { formatISO } from 'date-fns';
 
 interface UseChatReturn {
   conversations: Conversation[];
@@ -174,12 +175,15 @@ export const useChat = (): UseChatReturn => {
 
       setIsLoadingMessages(true);
       
-      // Determine pagination
-      const pagination = loadMore
-        ? { ...messagesPagination, pageNumber: messagesPagination.pageNumber + 1 }
-        : { ...defaultPaginationRequest, pageNumber: 1 };
+      // For cursor-based pagination, use the oldest message's createdAt as beforeDateTime
+      let beforeDateTime = "";
+      if (loadMore && messages.length > 0) {
+        // Find the oldest message (first in the array since they're chronological)
+        const oldestMessage = messages[0];
+        beforeDateTime = formatISO(new Date(oldestMessage.createdAt));
+      }
 
-      const result = await conversationService.getConversationMessages(conversationId, pagination);
+      const result = await conversationService.getConversationMessages(conversationId, beforeDateTime);
       
       if (!result || result.items.length === 0) {
         if (!loadMore) {
@@ -202,7 +206,6 @@ export const useChat = (): UseChatReturn => {
         setMessages(chronologicalMessages);
       }
       
-      setMessagesPagination(pagination);
       setHasMoreMessages(result.hasNextPage);
       
     } catch (error) {
@@ -210,7 +213,7 @@ export const useChat = (): UseChatReturn => {
     } finally {
       setIsLoadingMessages(false);
     }
-  }, [isLoadingMessages, hasMoreMessages, messagesPagination]);
+  }, [isLoadingMessages, hasMoreMessages, messages]);
 
   const loadGroupMessages = useCallback(async (groupId: string, loadMore: boolean = false) => {
     try {
@@ -221,12 +224,15 @@ export const useChat = (): UseChatReturn => {
 
       setIsLoadingMessages(true);
       
-      // Determine pagination
-      const pagination = loadMore
-        ? { ...messagesPagination, pageNumber: messagesPagination.pageNumber + 1 }
-        : { ...defaultPaginationRequest, pageNumber: 1 };
+      // For cursor-based pagination, use the oldest message's createdAt as beforeDateTime
+      let beforeDateTime = "";
+      if (loadMore && messages.length > 0) {
+        // Find the oldest message (first in the array since they're chronological)
+        const oldestMessage = messages[0];
+        beforeDateTime = formatISO(new Date(oldestMessage.createdAt));
+      }
 
-      const result = await groupService.getGroupMessages(groupId, pagination);
+      const result = await groupService.getGroupMessages(groupId, beforeDateTime);
       
       if (!result || result.items.length === 0) {
         if (!loadMore) {
@@ -249,7 +255,6 @@ export const useChat = (): UseChatReturn => {
         setMessages(chronologicalMessages);
       }
       
-      setMessagesPagination(pagination);
       setHasMoreMessages(result.hasNextPage);
       
     } catch (error) {
@@ -257,7 +262,7 @@ export const useChat = (): UseChatReturn => {
     } finally {
       setIsLoadingMessages(false);
     }
-  }, [isLoadingMessages, hasMoreMessages, messagesPagination]);
+  }, [isLoadingMessages, hasMoreMessages, messages]);
 
   const addMessage = useCallback((message: Message) => {
     setMessages(prev => {

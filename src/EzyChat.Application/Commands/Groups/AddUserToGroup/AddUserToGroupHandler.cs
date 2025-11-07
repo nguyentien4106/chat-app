@@ -79,6 +79,7 @@ public class AddMemberToGroupHandler(
         };
         
         await signalRService.NotifyGroupAsync(request.GroupId.ToString(), "MemberAdded", data, cancellationToken);
+        await signalRService.NotifyUserAsync(newMember.Id.ToString(), "MemberAdded", data, cancellationToken);
 
         return AppResponse<Unit>.Success(Unit.Value);
     }

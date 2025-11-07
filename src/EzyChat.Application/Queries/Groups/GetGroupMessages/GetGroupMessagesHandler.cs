@@ -32,7 +32,8 @@ public class GetGroupMessagesHandler(
         // Get paginated messages for this group
         var pagedMessages = await messageRepository.GetPagedResultAsync(
             request.BeforeDateTime,
-            groupId: request.GroupId,
+            id: request.GroupId,
+            type: "group",
             includeProperties: ["Sender"],
             cancellationToken: cancellationToken);
 

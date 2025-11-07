@@ -1,17 +1,16 @@
 using EzyChat.Application.DTOs.Common;
 using EzyChat.Application.DTOs.Messages;
 using EzyChat.Application.Interfaces;
-using EzyChat.Application.Models;
 
-namespace EzyChat.Application.Queries.Conversations.GetMessagesByConversationId;
+namespace EzyChat.Application.Queries.Conversations.GetConversationMessages;
 
-public class GetMessagesByConversationIdHandler(
-    IRepositoryPagedQuery<Message> messageRepository,
+public class GetConversationMessagesHandler(
+    IMessageRepository messageRepository,
     IRepository<Conversation> conversationRepository
-) : IQueryHandler<GetMessagesByConversationIdQuery, AppResponse<PagedResult<MessageDto>>>
+) : IQueryHandler<GetConversationMessagesQuery, AppResponse<PagedResult<MessageDto>>>
 {
     public async Task<AppResponse<PagedResult<MessageDto>>> Handle(
-        GetMessagesByConversationIdQuery request, 
+        GetConversationMessagesQuery request, 
         CancellationToken cancellationToken)
     {
         // Verify the conversation exists and the user has access to it
@@ -32,20 +31,12 @@ public class GetMessagesByConversationIdHandler(
 
         // Get paginated messages for this conversation
         var pagedMessages = await messageRepository.GetPagedResultAsync(
-            request,
-            filter: m => m.ConversationId == request.ConversationId,
+            request.BeforeDateTime,
+            id: request.ConversationId,
+            type: "conversation",
             includeProperties: ["Sender"],
             cancellationToken: cancellationToken);
 
-        // Map to DTOs
-        var messageDtos = pagedMessages.Items.Adapt<List<MessageDto>>();
-        
-        var result = new PagedResult<MessageDto>(
-            messageDtos,
-            pagedMessages.TotalCount,
-            pagedMessages.PageNumber,
-            pagedMessages.PageSize);
-
-        return AppResponse<PagedResult<MessageDto>>.Success(result);
+        return AppResponse<PagedResult<MessageDto>>.Success(pagedMessages);
     }
 }

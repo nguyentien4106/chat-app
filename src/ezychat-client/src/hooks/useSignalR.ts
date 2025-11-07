@@ -246,6 +246,7 @@ export const useSignalR = (): UseSignalRReturn => {
 
   const joinGroup = useCallback(async (groupId: string): Promise<void> => {
     if (connection && isConnected) {
+      console.log(`Joining group ${groupId} via SignalR`);
       await connection.invoke('JoinGroup', groupId);
     }
   }, [connection, isConnected]);

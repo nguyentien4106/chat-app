@@ -40,13 +40,14 @@ public class GroupsController(IMediator mediator) : AuthenticatedControllerBase
     }
 
     [HttpGet("{groupId}/messages")]
-    public async Task<ActionResult<AppResponse<PagedResult<MessageDto>>>> GetGroupMessages(Guid groupId, [FromQuery] DateTime beforeDateTime)
+    public async Task<ActionResult<AppResponse<PagedResult<MessageDto>>>> GetGroupMessages(Guid groupId, [FromQuery] DateTime? beforeDateTime)
     {
         var query = new GetGroupMessagesQuery
         {
             GroupId = groupId,
             UserId = CurrentUserId,
-            BeforeDateTime = beforeDateTime};
+            BeforeDateTime = beforeDateTime ?? DateTime.Now
+        };
         var response = await mediator.Send(query);
         return Ok(response);
     }

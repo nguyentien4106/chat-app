@@ -143,6 +143,7 @@ export const useChatHandlers = ({
     if (!userName.trim()) return;
     
     try {
+      await joinGroup(groupId);
       await addMemberToGroup(groupId, userName);
       toast.success('Member added successfully!');
     } catch (error: any) {

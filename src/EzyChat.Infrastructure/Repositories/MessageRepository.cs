@@ -13,7 +13,8 @@ public class MessageRepository(EzyChatDbContext dbContext) : IMessageRepository
 
     public async Task<PagedResult<MessageDto>> GetPagedResultAsync(
         DateTime beforeDateTime,
-        Guid groupId,
+        Guid id,
+        string type = "group",
         int pageSize = 20,
         string[]? includeProperties = null,
         CancellationToken cancellationToken = default
@@ -22,7 +23,14 @@ public class MessageRepository(EzyChatDbContext dbContext) : IMessageRepository
         IQueryable<Domain.Entities.Message> query = _dbSet;
 
         // Apply filter for messages before the specified DateTime
-        query = query.Where(m => m.CreatedAt < beforeDateTime && m.GroupId == groupId);
+        if (type == "group")
+        {
+            query = query.Where(m => m.CreatedAt < beforeDateTime && m.GroupId == id);
+        }
+        else
+        {
+            query = query.Where(m => m.CreatedAt < beforeDateTime && m.ConversationId == id);
+        }
 
         // Include related properties if specified
         if (includeProperties != null)
