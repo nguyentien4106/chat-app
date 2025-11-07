@@ -26,6 +26,11 @@ public class RefreshCommandHandler(
             cancellationToken
         );
 
+        if (userRefreshToken == null)
+        {
+            return AppResponse<AuthenticateResponse>.Error("Invalid refresh token.");
+        }
+
         return await authenticateService.Authenticate(userRefreshToken.ApplicationUser, cancellationToken);
     }
 }

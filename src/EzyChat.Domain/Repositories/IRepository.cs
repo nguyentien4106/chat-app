@@ -38,4 +38,5 @@ public interface IRepository<TEntity>
     Task<bool> DeleteByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<bool> ExistsAsync(Guid id);
+
 }

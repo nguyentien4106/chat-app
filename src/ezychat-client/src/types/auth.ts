@@ -23,6 +23,8 @@ export interface AuthUser {
   [JWT_CLAIMS.ROLE]: string;
   userName?: string;
   roles: string[];
+  iss: string;
+  exp: number;
 }
 
 export interface RegisterRequest {

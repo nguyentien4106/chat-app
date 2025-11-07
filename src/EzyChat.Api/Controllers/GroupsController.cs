@@ -9,13 +9,14 @@ using EzyChat.Application.Commands.Groups.LeaveGroup;
 using EzyChat.Application.Commands.Groups.RemoveMember;
 using EzyChat.Application.DTOs.Common;
 using EzyChat.Application.DTOs.Groups;
+using EzyChat.Application.DTOs.Messages;
 using EzyChat.Application.Models;
 using EzyChat.Application.Queries.Groups.GetGroupInfo;
+using EzyChat.Application.Queries.Groups.GetGroupMessages;
 using EzyChat.Application.Queries.Groups.GetUserGroups;
 using Microsoft.AspNetCore.Authorization;
 
 namespace EzyChat.Api.Controllers;
-
 
 // API/Controllers/GroupsController.cs
 [ApiController]
@@ -26,14 +27,26 @@ public class GroupsController(IMediator mediator) : AuthenticatedControllerBase
     [HttpGet]
     public async Task<ActionResult<AppResponse<PagedResult<GroupDto>>>> GetUserGroups([FromQuery] PaginationRequest request)
     {
-        var query = new GetUserGroupsQuery 
-        { 
+        var query = new GetUserGroupsQuery
+        {
             UserId = CurrentUserId,
             PageNumber = request.PageNumber,
             PageSize = request.PageSize,
             SortBy = request.SortBy,
             SortOrder = request.SortOrder
         };
+        var response = await mediator.Send(query);
+        return Ok(response);
+    }
+
+    [HttpGet("{groupId}/messages")]
+    public async Task<ActionResult<AppResponse<PagedResult<MessageDto>>>> GetGroupMessages(Guid groupId, [FromQuery] DateTime beforeDateTime)
+    {
+        var query = new GetGroupMessagesQuery
+        {
+            GroupId = groupId,
+            UserId = CurrentUserId,
+            BeforeDateTime = beforeDateTime};
         var response = await mediator.Send(query);
         return Ok(response);
     }

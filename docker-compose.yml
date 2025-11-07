@@ -49,6 +49,7 @@ services:
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=ezychatIntegration;Username=postgres;Password=Ti100600@;"
       JwtSettings__Issuer: "http://18.142.136.235"
       JwtSettings__Audience: "http://18.142.136.235"
+      JwtSettings__AccessTokenExpirationMinutes: 60
     ports:
       - "6060:6060"
     networks:

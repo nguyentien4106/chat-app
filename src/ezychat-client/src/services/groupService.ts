@@ -1,4 +1,4 @@
-import { Group, GroupInfo, InviteLinkResponse } from "@/types/chat.types";
+import { Group, GroupInfo, InviteLinkResponse, Message } from "@/types/chat.types";
 import { PaginatedResponse, PaginationRequest } from "@/types";
 import { apiService } from "./api";
 
@@ -19,6 +19,19 @@ export const groupService = {
     }
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
     return apiService.get<PaginatedResponse<Group>>(`/api/groups${queryString}`);
+  },
+
+  getGroupMessages: (groupId: string, params?: PaginationRequest) => {
+    const queryParams = new URLSearchParams();
+    if (params?.pageNumber !== undefined) {
+      queryParams.append('pageNumber', params.pageNumber.toString());
+    }
+    queryParams.append('pageSize', "20");
+    queryParams.append('sortOrder', 'desc');
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return apiService.get<PaginatedResponse<Message>>(
+      `/api/groups/${groupId}/messages${queryString}`
+    );
   },
   
   createGroup: (data: { name: string; description?: string }) =>

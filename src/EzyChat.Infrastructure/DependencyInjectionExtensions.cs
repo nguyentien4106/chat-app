@@ -148,12 +148,14 @@ public static class DependencyInjectionExtensions
 
         services.AddScoped<IEzyChatDbContext, EzyChatDbContext>();
         services.AddSingleton<IStorageService, R2StorageService>();
+        services.AddScoped<IMessagesService, MessagesServices>();
 
         // Repository registration
         services.AddScoped(typeof(IRepositoryPagedQuery<>), typeof(PagedQueryRepository<>));
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
         services.AddScoped(typeof(Repository<>), typeof(EfRepository<>));
 
+        services.AddScoped<IMessageRepository, MessageRepository>();
         services.AddScoped<IRepository<Message>, EfRepository<Message>>();
         services.AddScoped<IRepository<Group>, EfRepository<Group>>();
         services.AddScoped<IRepository<GroupMember>, EfRepository<GroupMember>>();

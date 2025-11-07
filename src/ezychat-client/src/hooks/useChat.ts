@@ -4,7 +4,6 @@ import { useState, useCallback, useRef } from 'react';
 import type { Conversation, Group, Message } from '@/types/chat.types';
 import { conversationService } from '@/services/conversationService';
 import { groupService } from '@/services/groupService';
-import { messageService } from '@/services/messageService';
 import { useAuth } from '@/contexts/AuthContext';
 import { PaginationRequest } from '@/types';
 import { defaultPaginationRequest } from '@/constants';
@@ -26,7 +25,8 @@ interface UseChatReturn {
   loadConversations: (loadMore?: boolean) => Promise<void>;
   addConversation: (conversation: Conversation) => void;
   loadGroups: (loadMore?: boolean) => Promise<void>;
-  loadMessages: (chatId: string, type: 'user' | 'group', loadMore?: boolean) => Promise<void>;
+  loadUserMessages: (conversationId: string, loadMore?: boolean) => Promise<void>;
+  loadGroupMessages: (groupId: string, loadMore?: boolean) => Promise<void>;
   addMessage: (message: Message) => void;
   clearMessages: () => void;
   createGroup: (name: string, description?: string) => Promise<void>;
@@ -165,7 +165,7 @@ export const useChat = (): UseChatReturn => {
     }
   }, []);
 
-  const loadMessages = useCallback(async (chatId: string, type: 'user' | 'group', loadMore: boolean = false) => {
+  const loadUserMessages = useCallback(async (conversationId: string, loadMore: boolean = false) => {
     try {
       // Prevent loading more if already loading or no more messages
       if (loadMore && (isLoadingMessages || !hasMoreMessages)) {
@@ -174,47 +174,86 @@ export const useChat = (): UseChatReturn => {
 
       setIsLoadingMessages(true);
       
-      if (type === 'user') {
-        // Determine pagination
-        const pagination = loadMore
-          ? { ...messagesPagination, pageNumber: messagesPagination.pageNumber + 1 }
-          : { ...defaultPaginationRequest, pageNumber: 1 };
+      // Determine pagination
+      const pagination = loadMore
+        ? { ...messagesPagination, pageNumber: messagesPagination.pageNumber + 1 }
+        : { ...defaultPaginationRequest, pageNumber: 1 };
 
-        const result = await conversationService.getConversationMessages(chatId, pagination);
-        
-        if (!result || result.items.length === 0) {
-          if (!loadMore) {
-            setMessages([]);
-            setHasMoreMessages(false);
-          } else {
-            setHasMoreMessages(false);
-          }
-          return;
-        }
-
-        // Reverse messages to show chronologically (oldest to newest)
-        const chronologicalMessages = [...result.items].reverse();
-        
-        if (loadMore) {
-          // Prepend older messages
-          setMessages(prev => [...chronologicalMessages, ...prev]);
+      const result = await conversationService.getConversationMessages(conversationId, pagination);
+      
+      if (!result || result.items.length === 0) {
+        if (!loadMore) {
+          setMessages([]);
+          setHasMoreMessages(false);
         } else {
-          // Initial load: replace all messages
-          setMessages(chronologicalMessages);
+          setHasMoreMessages(false);
         }
-        
-        setMessagesPagination(pagination);
-        setHasMoreMessages(result.hasNextPage);
         return;
       }
 
-      // Group messages
-      const msgs = await messageService.getGroupMessages(chatId);
-      setMessages(msgs);
-      setHasMoreMessages(false); // Group messages don't have pagination yet
+      // Reverse messages to show chronologically (oldest to newest)
+      const chronologicalMessages = [...result.items].reverse();
+      
+      if (loadMore) {
+        // Prepend older messages
+        setMessages(prev => [...chronologicalMessages, ...prev]);
+      } else {
+        // Initial load: replace all messages
+        setMessages(chronologicalMessages);
+      }
+      
+      setMessagesPagination(pagination);
+      setHasMoreMessages(result.hasNextPage);
       
     } catch (error) {
-      console.error('Error loading messages:', error);
+      console.error('Error loading user messages:', error);
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  }, [isLoadingMessages, hasMoreMessages, messagesPagination]);
+
+  const loadGroupMessages = useCallback(async (groupId: string, loadMore: boolean = false) => {
+    try {
+      // Prevent loading more if already loading or no more messages
+      if (loadMore && (isLoadingMessages || !hasMoreMessages)) {
+        return;
+      }
+
+      setIsLoadingMessages(true);
+      
+      // Determine pagination
+      const pagination = loadMore
+        ? { ...messagesPagination, pageNumber: messagesPagination.pageNumber + 1 }
+        : { ...defaultPaginationRequest, pageNumber: 1 };
+
+      const result = await groupService.getGroupMessages(groupId, pagination);
+      
+      if (!result || result.items.length === 0) {
+        if (!loadMore) {
+          setMessages([]);
+          setHasMoreMessages(false);
+        } else {
+          setHasMoreMessages(false);
+        }
+        return;
+      }
+
+      // Reverse messages to show chronologically (oldest to newest)
+      const chronologicalMessages = [...result.items].reverse();
+      
+      if (loadMore) {
+        // Prepend older messages
+        setMessages(prev => [...chronologicalMessages, ...prev]);
+      } else {
+        // Initial load: replace all messages
+        setMessages(chronologicalMessages);
+      }
+      
+      setMessagesPagination(pagination);
+      setHasMoreMessages(result.hasNextPage);
+      
+    } catch (error) {
+      console.error('Error loading group messages:', error);
     } finally {
       setIsLoadingMessages(false);
     }
@@ -367,7 +406,8 @@ export const useChat = (): UseChatReturn => {
     loadConversations,
     addConversation,
     loadGroups,
-    loadMessages,
+    loadUserMessages,
+    loadGroupMessages,
     addMessage,
     clearMessages,
     createGroup,

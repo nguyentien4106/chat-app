@@ -13,5 +13,13 @@ namespace EzyChat.Application.Interfaces
             string[]? includeProperties = null,
             CancellationToken cancellationToken = default
         );
+
+        Task<PagedResult<TEntity>> GetPagedResultAsync(
+            DateTime beforeDateTime,
+            int pageSize = 20,
+            Expression<Func<TEntity, bool>>? filter = null,
+            string[]? includeProperties = null,
+            CancellationToken cancellationToken = default
+        );
     }
 }

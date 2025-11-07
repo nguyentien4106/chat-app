@@ -5,6 +5,7 @@ import Cookies from 'js-cookie';
 import { AppResponse } from '@/types';
 import { ACCESSTOKEN_KEY, REFRESHTOKEN_KEY } from '@/constants/auth';
 import { authService } from '@/services/authService';
+import { useAuth } from '@/contexts/AuthContext';
 
 const SIGNALR_HUB_URL = import.meta.env.VITE_SIGNALR_HUB_URL || 'http://localhost:5000/hubs/chat';
 
@@ -26,6 +27,7 @@ export const useSignalR = (): UseSignalRReturn => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const isRefreshingToken = useRef(false);
   const connectionRef = useRef<signalR.HubConnection | null>(null);
+  const { user } = useAuth();
 
   // Function to get fresh token, with refresh if needed
   const getFreshToken = async (): Promise<string | null> => {
@@ -36,10 +38,9 @@ export const useSignalR = (): UseSignalRReturn => {
       return null;
     }
 
-    // Check if token is expired or about to expire
-    try {
-      const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-      const expirationTime = tokenPayload.exp * 1000; // Convert to milliseconds
+    // Check if token is expired or about to expire using user.exp from auth context
+    if (user?.exp) {
+      const expirationTime = user.exp * 1000; // Convert to milliseconds
       const currentTime = Date.now();
       const timeUntilExpiry = expirationTime - currentTime;
 
@@ -73,12 +74,9 @@ export const useSignalR = (): UseSignalRReturn => {
           isRefreshingToken.current = false;
         }
       }
-
-      return token;
-    } catch (error) {
-      console.error('Error parsing token:', error);
-      return token; // Return token anyway, let server validate
     }
+
+    return token;
   };
 
   useEffect(() => { 
@@ -90,7 +88,11 @@ export const useSignalR = (): UseSignalRReturn => {
         .withUrl(SIGNALR_HUB_URL, {
           accessTokenFactory: async () => {
             const token = await getFreshToken();
-            return token || '';
+            if(!token){
+              console.warn('No valid access token available for SignalR connection');
+              authService.logout();
+            }
+            return token || "";
           },
           skipNegotiation: true,
           transport: signalR.HttpTransportType.WebSockets
@@ -229,7 +231,7 @@ export const useSignalR = (): UseSignalRReturn => {
 
       stopConnection();
     };
-  }, []);
+  }, [user?.exp]);
 
   const sendMessage = useCallback(async (message: SendMessageRequest): Promise<Message | undefined> => {
     if (connection && isConnected) {

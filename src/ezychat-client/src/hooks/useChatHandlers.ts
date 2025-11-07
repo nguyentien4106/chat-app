@@ -9,7 +9,8 @@ interface UseChatHandlersProps {
   setMessageInput: (input: string) => void;
   selectedFile: File | null;
   messageInputRef: React.RefObject<HTMLInputElement | null>;
-  loadMessages: (chatId: string, type: 'user' | 'group', loadMore?: boolean) => Promise<void>;
+  loadUserMessages: (conversationId: string, loadMore?: boolean) => Promise<void>;
+  loadGroupMessages: (groupId: string, loadMore?: boolean) => Promise<void>;
   sendSignalRMessage: (messageData: SendMessageRequest) => Promise<Message | undefined>;
   addMessage: (message: Message) => void;
   onLastMessageEvent?: (message: Message) => void;
@@ -32,7 +33,8 @@ export const useChatHandlers = ({
   setMessageInput,
   selectedFile,
   messageInputRef,
-  loadMessages,
+  loadUserMessages,
+  loadGroupMessages,
   sendSignalRMessage,
   addMessage,
   onLastMessageEvent,
@@ -51,10 +53,11 @@ export const useChatHandlers = ({
   const handleChatSelect = useCallback(async (chat: ActiveChat) => {
     setActiveChat(chat);
     if(chat.id){
-        await loadMessages(chat.id, chat.type);
-    }
-    else {
-      
+      if (chat.type === 'user' && chat.conversationId) {
+        await loadUserMessages(chat.conversationId);
+      } else if (chat.type === 'group' && chat.groupId) {
+        await loadGroupMessages(chat.groupId);
+      }
     }
     
     if (chat.type === 'group') {
@@ -66,7 +69,7 @@ export const useChatHandlers = ({
     setTimeout(() => {
       messageInputRef.current?.focus();
     }, 100);
-  }, [setActiveChat, loadMessages, joinGroup, markConversationAsRead, messageInputRef]);
+  }, [setActiveChat, loadUserMessages, loadGroupMessages, joinGroup, markConversationAsRead, messageInputRef]);
 
   const handleSendMessage = useCallback(async (): Promise<void> => {
     if ((!messageInput.trim() && !selectedFile) || !activeChat) return;
@@ -175,8 +178,8 @@ export const useChatHandlers = ({
 
     addConversation(newConv);
     clearMessages();
-    //await loadMessages(user.id, 'user');
-  }, [setActiveChat, addConversation, loadMessages]);
+    // Messages will be loaded when first message is sent
+  }, [setActiveChat, addConversation, clearMessages]);
 
   const handleMarkAsRead = useCallback(async (conversationId: string, senderId: string) => {
     await markConversationAsRead(conversationId, senderId);
@@ -186,11 +189,11 @@ export const useChatHandlers = ({
     if (!activeChat) return;
     
     if (activeChat.type === 'user' && activeChat.conversationId) {
-      await loadMessages(activeChat.conversationId, 'user', true);
+      await loadUserMessages(activeChat.conversationId, true);
     } else if (activeChat.type === 'group' && activeChat.groupId) {
-      await loadMessages(activeChat.groupId, 'group', true);
+      await loadGroupMessages(activeChat.groupId, true);
     }
-  }, [activeChat, loadMessages]);
+  }, [activeChat, loadUserMessages, loadGroupMessages]);
 
   return {
     handleChatSelect,

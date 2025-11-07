@@ -99,4 +99,75 @@ public class PagedQueryRepository<TEntity>(
         }
     }
 
+    public async Task<PagedResult<TEntity>> GetPagedResultAsync(DateTime beforeDate, int pageSize, string[]? includeProperties = null, CancellationToken cancellationToken = default)
+    {
+        IQueryable<TEntity> query = dbSet;
+
+        // Apply filter
+        query = query.Where(e => e.CreatedAt < beforeDate);
+
+        // Apply includes
+        if (includeProperties != null)
+        {
+            query = includeProperties.Aggregate(query, (current, includeProperty) => current.Include(includeProperty));
+        }
+
+        query = query.OrderByDescending(e => e.CreatedAt);
+        
+        // Fetch PageSize + 1 to determine if more items exist
+        var items = await query
+            .Take(pageSize + 1)
+            .ToListAsync(cancellationToken);
+
+        var hasMoreItems = items.Count > pageSize;
+        if (hasMoreItems)
+        {
+            items.RemoveAt(pageSize);
+        }
+
+        return new PagedResult<TEntity>
+        {
+            Items = items,
+            TotalCount = hasMoreItems ? pageSize + 1 : pageSize, // Trick to make HasNextPage work
+            PageSize = pageSize,
+        };
+    }
+
+    public async Task<PagedResult<TEntity>> GetPagedResultAsync(DateTime beforeDateTime, int pageSize = 20, Expression<Func<TEntity, bool>>? filter = null, string[]? includeProperties = null, CancellationToken cancellationToken = default)
+    {
+        IQueryable<TEntity> query = dbSet;
+
+        if (filter != null)
+        {
+            query = query.Where(filter);
+        }
+        
+        query = query.Where(e => e.CreatedAt < beforeDateTime);
+
+        // Apply includes
+        if (includeProperties != null)
+        {
+            query = includeProperties.Aggregate(query, (current, includeProperty) => current.Include(includeProperty));
+        }
+
+        query = query.OrderByDescending(e => e.CreatedAt);
+        
+        // Fetch PageSize + 1 to determine if more items exist
+        var items = await query
+            .Take(pageSize + 1)
+            .ToListAsync(cancellationToken);
+
+        var hasMoreItems = items.Count > pageSize;
+        if (hasMoreItems)
+        {
+            items.RemoveAt(pageSize);
+        }
+
+        return new PagedResult<TEntity>
+        {
+            Items = items,
+            TotalCount = hasMoreItems ? pageSize + 1 : pageSize, // Trick to make HasNextPage work
+            PageSize = pageSize,
+        };
+    }
 } 
