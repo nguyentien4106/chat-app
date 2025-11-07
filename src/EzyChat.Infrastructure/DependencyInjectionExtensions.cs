@@ -74,7 +74,7 @@ public static class DependencyInjectionExtensions
                         NameClaimType = ClaimTypes.NameIdentifier,
                         RoleClaimType = ClaimTypes.Role
                     };
-                    
+                    options.SaveToken = true;
                     // For SignalR authentication
                     options.Events = new JwtBearerEvents
                     {
@@ -87,6 +87,16 @@ public static class DependencyInjectionExtensions
                             {
                                 context.Token = accessToken;
                             }
+                            return Task.CompletedTask;
+                        },
+                        OnAuthenticationFailed = context =>
+                        {
+                            // Log authentication failures for debugging
+                            if (context.Exception is SecurityTokenExpiredException)
+                            {
+                                context.Response.Headers["Token-Expired"] = "true";
+                            }
+                            Console.Error.WriteLine("Authentication failed:", context.Exception.Message);
                             return Task.CompletedTask;
                         }
                     };

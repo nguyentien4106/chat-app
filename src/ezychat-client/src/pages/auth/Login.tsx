@@ -123,15 +123,6 @@ export const Login = () => {
               {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
 
-            <div className="mt-4 p-4 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground text-center mb-2">
-                Demo Credentials
-              </p>
-              <p className="text-xs text-center">
-                <strong>Email:</strong> admin@ezychat.com<br />
-                <strong>Password:</strong> admin123
-              </p>
-            </div>
           </form>
 
           <div className="mt-6 text-center text-sm text-muted-foreground">

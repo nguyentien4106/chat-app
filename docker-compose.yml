@@ -37,14 +37,18 @@ services:
       - postgres
 
   api:
+    image: nguyentien0620/ezychat-api:${TAG:-latest}
     build:
       context: ./src
-      dockerfile: ezychat.Api/Dockerfile
+      dockerfile: EzyChat.Api/Dockerfile
+    platform: linux/amd64
     container_name: ezychat-api
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:6060
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=ezychatIntegration;Username=postgres;Password=Ti100600@;"
+      JwtSettings__Issuer: "http://18.142.136.235"
+      JwtSettings__Audience: "http://18.142.136.235"
     ports:
       - "6060:6060"
     networks:
@@ -52,6 +56,19 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
+
+  client:
+    image: nguyentien0620/ezychat-client:${TAG:-latest}
+    build:
+      context: ./src/ezychat-client
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    container_name: ezychat-client
+    networks:
+      - ezychat-network
+    depends_on:
+      - api
     restart: unless-stopped
 
 volumes:

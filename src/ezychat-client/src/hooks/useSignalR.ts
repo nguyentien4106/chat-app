@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import * as signalR from '@microsoft/signalr';
 import type { Group, Message, SendMessageRequest } from '@/types/chat.types';
 import Cookies from 'js-cookie';
 import { AppResponse } from '@/types';
+import { ACCESSTOKEN_KEY, REFRESHTOKEN_KEY } from '@/constants/auth';
+import { authService } from '@/services/authService';
 
 const SIGNALR_HUB_URL = import.meta.env.VITE_SIGNALR_HUB_URL || 'http://localhost:5000/hubs/chat';
 
@@ -22,90 +24,202 @@ interface UseSignalRReturn {
 export const useSignalR = (): UseSignalRReturn => {
   const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const isRefreshingToken = useRef(false);
+  const connectionRef = useRef<signalR.HubConnection | null>(null);
 
-  useEffect(() => {
-    const token = Cookies.get("chat_app_access_token");
+  // Function to get fresh token, with refresh if needed
+  const getFreshToken = async (): Promise<string | null> => {
+    let token = Cookies.get(ACCESSTOKEN_KEY);
     
     if (!token) {
-      console.warn('No access token found, skipping SignalR connection');
-      return;
+      console.warn('No access token found');
+      return null;
     }
 
-    const newConnection = new signalR.HubConnectionBuilder()
-      .withUrl(SIGNALR_HUB_URL, {
-        accessTokenFactory: () => token || '',
-        skipNegotiation: true,
-        transport: signalR.HttpTransportType.WebSockets
-      })
-      .withAutomaticReconnect({
-        nextRetryDelayInMilliseconds: retryContext => {
-          // Exponential backoff: 0s, 2s, 10s, 30s
-          if (retryContext.elapsedMilliseconds < 60000) {
-            return Math.min(1000 * Math.pow(2, retryContext.previousRetryCount), 30000);
+    // Check if token is expired or about to expire
+    try {
+      const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+      const expirationTime = tokenPayload.exp * 1000; // Convert to milliseconds
+      const currentTime = Date.now();
+      const timeUntilExpiry = expirationTime - currentTime;
+
+      // If token expires in less than 1 minute, refresh it
+      if (timeUntilExpiry < 60000) {
+        console.log('Token expired or about to expire, refreshing...');
+        
+        if (isRefreshingToken.current) {
+          // Wait for ongoing refresh
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return Cookies.get(ACCESSTOKEN_KEY) || null;
+        }
+
+        isRefreshingToken.current = true;
+        try {
+          const refreshToken = Cookies.get(REFRESHTOKEN_KEY);
+          if (!refreshToken) {
+            console.error('No refresh token available');
+            return null;
           }
-          // Stop retrying after 1 minute
+
+          const response = await authService.refreshToken(refreshToken);
+          Cookies.set(ACCESSTOKEN_KEY, response.accessToken);
+          Cookies.set(REFRESHTOKEN_KEY, response.refreshToken);
+          console.log('Token refreshed successfully');
+          return response.accessToken;
+        } catch (error) {
+          console.error('Failed to refresh token:', error);
           return null;
+        } finally {
+          isRefreshingToken.current = false;
         }
-      })
-      .configureLogging(signalR.LogLevel.Warning)
-      .build();
+      }
 
+      return token;
+    } catch (error) {
+      console.error('Error parsing token:', error);
+      return token; // Return token anyway, let server validate
+    }
+  };
+
+  useEffect(() => { 
     let isMounted = true;
+    let reconnectTimeoutId: NodeJS.Timeout | null = null;
 
-    // Set up event handlers before starting
-    newConnection.onreconnecting(() => {
-      if (isMounted) {
-        console.log('SignalR: Reconnecting...');
-        setIsConnected(false);
+    const createConnection = () => {
+      const newConnection = new signalR.HubConnectionBuilder()
+        .withUrl(SIGNALR_HUB_URL, {
+          accessTokenFactory: async () => {
+            const token = await getFreshToken();
+            return token || '';
+          },
+          skipNegotiation: true,
+          transport: signalR.HttpTransportType.WebSockets
+        })
+        .withAutomaticReconnect({
+          nextRetryDelayInMilliseconds: retryContext => {
+            // Exponential backoff: 0s, 2s, 10s, 30s
+            if (retryContext.elapsedMilliseconds < 60000) {
+              return Math.min(1000 * Math.pow(2, retryContext.previousRetryCount), 30000);
+            }
+            // Stop retrying after 1 minute
+            return null;
+          }
+        })
+        .configureLogging(signalR.LogLevel.Warning)
+        .build();
+
+      return newConnection;
+    };
+
+    const setupConnection = async () => {
+      const token = await getFreshToken();
+      
+      if (!token) {
+        console.warn('No valid access token found, skipping SignalR connection');
+        return;
       }
-    });
 
-    newConnection.onreconnected(() => {
-      if (isMounted) {
-        console.log('SignalR: Reconnected successfully');
-        setIsConnected(true);
-      }
-    });
+      const newConnection = createConnection();
+      connectionRef.current = newConnection;
 
-    newConnection.onclose((error) => {
-      if (isMounted) {
-        if (error) {
-          console.error('SignalR: Connection closed with error:', error);
-        } else {
-          console.log('SignalR: Connection closed');
+      // Set up event handlers before starting
+      newConnection.onreconnecting(async (error) => {
+        if (isMounted) {
+          console.log('SignalR: Reconnecting...', error?.message);
+          setIsConnected(false);
+          
+          // Try to refresh token before reconnection
+          await getFreshToken();
         }
-        setIsConnected(false);
-      }
-    });
+      });
 
-    setConnection(newConnection);
+      newConnection.onreconnected(() => {
+        if (isMounted) {
+          console.log('SignalR: Reconnected successfully');
+          setIsConnected(true);
+        }
+      });
 
-    // Start the connection
-    const startConnection = async () => {
+      newConnection.onclose(async (error) => {
+        if (isMounted) {
+          if (error) {
+            console.error('SignalR: Connection closed with error:', error);
+            
+            // Check if it's an authentication error
+            if (error.message && (
+              error.message.includes('401') || 
+              error.message.includes('Unauthorized') ||
+              error.message.includes('token')
+            )) {
+              console.log('SignalR: Authentication error detected, attempting to reconnect with fresh token...');
+              
+              // Try to refresh token and reconnect
+              const freshToken = await getFreshToken();
+              if (freshToken && isMounted) {
+                // Recreate connection with fresh token
+                reconnectTimeoutId = setTimeout(() => {
+                  if (isMounted) {
+                    setupConnection();
+                  }
+                }, 2000);
+              }
+            }
+          } else {
+            console.log('SignalR: Connection closed');
+          }
+          setIsConnected(false);
+        }
+      });
+
+      setConnection(newConnection);
+
+      // Start the connection
       try {
         await newConnection.start();
         if (isMounted) {
           console.log('SignalR: Connected successfully');
           setIsConnected(true);
         }
-      } catch (err) {
+      } catch (err: any) {
         if (isMounted) {
           console.error('SignalR: Connection failed:', err);
           setIsConnected(false);
+          
+          // If authentication failed, try with fresh token
+          if (err.message && (
+            err.message.includes('401') || 
+            err.message.includes('Unauthorized') ||
+            err.message.includes('token')
+          )) {
+            console.log('SignalR: Authentication failed, will retry with fresh token');
+            const freshToken = await getFreshToken();
+            if (freshToken && isMounted) {
+              reconnectTimeoutId = setTimeout(() => {
+                if (isMounted) {
+                  setupConnection();
+                }
+              }, 2000);
+            }
+          }
         }
       }
     };
 
-    startConnection();
+    setupConnection();
 
     return () => {
       isMounted = false;
       
+      if (reconnectTimeoutId) {
+        clearTimeout(reconnectTimeoutId);
+      }
+      
       // Gracefully stop the connection
       const stopConnection = async () => {
-        if (newConnection.state !== signalR.HubConnectionState.Disconnected) {
+        const conn = connectionRef.current;
+        if (conn && conn.state !== signalR.HubConnectionState.Disconnected) {
           try {
-            await newConnection.stop();
+            await conn.stop();
             console.log('SignalR: Connection stopped cleanly');
           } catch (err) {
             console.error('SignalR: Error stopping connection:', err);
