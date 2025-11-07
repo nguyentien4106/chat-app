@@ -103,7 +103,6 @@ public class EzyChatDbInitializer(
             PhoneNumberConfirmed = false,
             TwoFactorEnabled = false,
             LockoutEnabled = false,
-            AccessFailedCount = 0,
             Created = DateTime.Now,
             CreatedBy = "System"
         };
@@ -128,21 +127,20 @@ public class EzyChatDbInitializer(
     private async Task SeedNormalUsersAsync()
     {
         var normalUsers = new List<ApplicationUser>();
-        var userNumber = 100;
+        var userNumber = 20;
         for (int i = 1; i <= userNumber; i++)
         {
             normalUsers.Add(new ApplicationUser
             {
                 Id = Guid.NewGuid(),
-                UserName = $"user{i}@gmail.com",
+                UserName = $"user{i}",
                 Email = $"user{i}@gmail.com",
-                FirstName = $"User {i}",
-                LastName = "System",
+                LastName = $"User {i}",
+                FirstName = "System",
                 EmailConfirmed = true,
                 PhoneNumberConfirmed = true,
                 TwoFactorEnabled = true,
                 LockoutEnabled = true,
-                AccessFailedCount = 0,
                 Created = DateTime.Now,
                 CreatedBy = "System"
             });

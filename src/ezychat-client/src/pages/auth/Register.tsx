@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserPlus, Mail, Lock, User, Phone, Eye, EyeOff } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { UserPlus, Mail, Lock, User, Phone, Eye, EyeOff, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const Register = () => {
@@ -27,6 +28,33 @@ export const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Password strength calculation
+  const getPasswordStrength = (password: string) => {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^a-zA-Z0-9]/.test(password)) strength++; // Special characters
+    return strength;
+  };
+
+  const passwordStrength = getPasswordStrength(formData.password);
+  const getStrengthColor = () => {
+    if (passwordStrength <= 1) return 'bg-red-500';
+    if (passwordStrength === 2) return 'bg-orange-500';
+    if (passwordStrength === 3) return 'bg-yellow-500';
+    if (passwordStrength === 4) return 'bg-blue-500';
+    return 'bg-green-500';
+  };
+  const getStrengthLabel = () => {
+    if (passwordStrength <= 1) return 'Weak';
+    if (passwordStrength === 2) return 'Fair';
+    if (passwordStrength === 3) return 'Good';
+    if (passwordStrength === 4) return 'Strong';
+    return 'Very Strong';
+  };
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -53,8 +81,23 @@ export const Register = () => {
       return false;
     }
 
-    if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters long');
+    if (formData.password.length < 8) {
+      toast.error('Password must be at least 8 characters long');
+      return false;
+    }
+
+    if (!/[A-Z]/.test(formData.password)) {
+      toast.error('Password must contain at least one uppercase letter');
+      return false;
+    }
+
+    if (!/[a-z]/.test(formData.password)) {
+      toast.error('Password must contain at least one lowercase letter');
+      return false;
+    }
+
+    if (!/[0-9]/.test(formData.password)) {
+      toast.error('Password must contain at least one digit');
       return false;
     }
 
@@ -149,7 +192,19 @@ export const Register = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="email">Email *</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger type="button" className="cursor-help">
+                      <Info className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Please enter a valid email address</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -184,7 +239,25 @@ export const Register = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password *</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="password">Password *</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger type="button" className="cursor-help">
+                      <Info className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p className="font-semibold mb-1">Password Requirements:</p>
+                      <ul className="text-xs space-y-1 list-disc pl-4">
+                        <li>At least 8 characters long</li>
+                        <li>Contains at least one uppercase letter (A-Z)</li>
+                        <li>Contains at least one lowercase letter (a-z)</li>
+                        <li>Contains at least one digit (0-9)</li>
+                      </ul>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -210,6 +283,23 @@ export const Register = () => {
                   )}
                 </button>
               </div>
+              {formData.password && (
+                <div className="space-y-1">
+                  <div className="flex gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full transition-colors ${
+                          i < passwordStrength ? getStrengthColor() : 'bg-gray-200 dark:bg-gray-700'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className={`text-xs ${passwordStrength <= 2 ? 'text-orange-600' : 'text-green-600'}`}>
+                    Password strength: {getStrengthLabel()}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -239,6 +329,17 @@ export const Register = () => {
                   )}
                 </button>
               </div>
+              {formData.confirmPassword && (
+                <p className={`text-xs ${
+                  formData.password === formData.confirmPassword 
+                    ? 'text-green-600' 
+                    : 'text-red-600'
+                }`}>
+                  {formData.password === formData.confirmPassword 
+                    ? '✓ Passwords match' 
+                    : '✗ Passwords do not match'}
+                </p>
+              )}
             </div>
 
             <Button
