@@ -6,11 +6,9 @@ namespace EzyChat.Application.Commands.Messages.SendMessage.Strategy;
 
 public class SendMessageStrategyContext(IEnumerable<ISendMessageStrategy> strategies)
 {
-    private readonly IEnumerable<ISendMessageStrategy> _strategies = strategies;
-
     public async Task<AppResponse<MessageDto>> ExecuteAsync(SendMessageCommand command, CancellationToken cancellationToken)
     {
-        var strategy = _strategies.FirstOrDefault(s => s.CanHandle(command));
+        var strategy = strategies.FirstOrDefault(s => s.CanHandle(command));
         
         if (strategy == null)
         {

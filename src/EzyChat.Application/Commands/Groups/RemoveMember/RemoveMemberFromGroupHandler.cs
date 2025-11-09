@@ -14,7 +14,8 @@ public class RemoveMemberFromGroupHandler(
     IRepository<GroupMember> groupMemberRepository,
     IHubContext<ChatHub> hubContext,
     IRepository<Group> groupRepository,
-    IRepository<Message> messageRepository
+    IRepository<Message> messageRepository,
+    ISignalRService signalRService
 ) : ICommandHandler<RemoveMemberFromGroupCommand, AppResponse<Unit>>
 {
 
@@ -48,8 +49,10 @@ public class RemoveMemberFromGroupHandler(
         if (memberToRemove.UserId == group.CreatedById)
             return AppResponse<Unit>.Fail("Cannot remove the group creator");
 
+        group.MemberCount -= 1;
+        
         await groupMemberRepository.DeleteAsync(memberToRemove, cancellationToken: cancellationToken);
-
+        await groupRepository.UpdateAsync(group, cancellationToken);
         // Create notification message
         var notificationMessage = new Message
         {
@@ -62,10 +65,17 @@ public class RemoveMemberFromGroupHandler(
 
         await messageRepository.AddAsync(notificationMessage, cancellationToken);
         var message = notificationMessage.Adapt<MessageDto>();
-        
-        await hubContext.Clients.Group(request.GroupId.ToString())
-            .SendAsync("MemberRemoved", new { GroupId = request.GroupId, UserId = request.UserId, RemovedMemberName = memberToRemove.User.UserName, Message = message }, cancellationToken);
 
+        var data = new
+        {
+            GroupId = request.GroupId, 
+            UserId = request.UserId, 
+            Message = message
+        };
+        
+        await signalRService.NotifyGroupAsync(request.GroupId.ToString(), "OnGroupHasMemberLeft", data, cancellationToken);
+        await signalRService.NotifyUserAsync(memberToRemove.Id.ToString(), "OnMemberLeftGroup", data, cancellationToken);
+        
         return AppResponse<Unit>.Success(Unit.Value);
     }
 }

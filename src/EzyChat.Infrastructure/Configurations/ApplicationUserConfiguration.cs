@@ -16,6 +16,16 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
             .IsRequired()
             .HasMaxLength(50);
         
+        // Configure datetime columns as timestamp without timezone
+        builder.Property(u => u.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+        
+        builder.Property(u => u.UpdatedAt)
+            .HasColumnType("timestamp without time zone");
+        
+        builder.Property(u => u.Created)
+            .HasColumnType("timestamp without time zone");
+        
         // Create indexes for search optimization
         builder.HasIndex(u => u.UserName);
         builder.HasIndex(u => u.Email);

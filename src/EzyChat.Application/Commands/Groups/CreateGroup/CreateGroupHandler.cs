@@ -28,7 +28,7 @@ public class CreateGroupHandler(
             Name = request.Name,
             Description = request.Description,
             CreatedById = request.CreatedById,
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.UtcNow
         };
 
         var member = new GroupMember
@@ -36,7 +36,7 @@ public class CreateGroupHandler(
             Id = Guid.NewGuid(),
             GroupId = group.Id,
             UserId = request.CreatedById,
-            JoinedAt = DateTime.Now,
+            JoinedAt = DateTime.UtcNow,
             IsAdmin = true
         };
 

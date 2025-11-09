@@ -71,6 +71,8 @@ interface ChatContextType {
   handleLoadMoreMessages: () => Promise<void>;
 
   // Events
+
+  chatHandlers: ReturnType<typeof useChatHandlers>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -117,16 +119,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setActiveChat,
     currentUserId,
     groups: chat.groups,
-    onMessagesEvent: chat.onMessagesEvent,
-    onLastMessageEvent: chat.onLastMessageEvent,
-    onGroupMemberEvent: chat.onGroupMemberEvent,
-    onGroupEvent: chat.onGroupEvent,
-    onReceiveMessage: signalR.onReceiveMessage,
-    onMemberAdded: signalR.onMemberAdded,
-    onMemberRemoved: signalR.onMemberRemoved,
-    onMemberLeft: signalR.onMemberLeft,
-    onGroupDeleted: signalR.onGroupDeleted,
-    addConversation: chat.addConversation
+    chat: chat,
+    signalR: signalR
   });
   
   // All handlers
@@ -135,23 +129,10 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setActiveChat,
     messageInput,
     setMessageInput,
-    selectedFile: fileUpload.selectedFile,
     messageInputRef,
-    loadUserMessages: chat.loadUserMessages,
-    loadGroupMessages: chat.loadGroupMessages,
-    sendSignalRMessage: signalR.sendMessage,
-    addMessage: chat.addMessage,
-    onLastMessageEvent: chat.onLastMessageEvent,
-    clearSelection: fileUpload.clearSelection,
-    uploadFile: fileUpload.uploadFile,
-    createGroup: chat.createGroup,
-    generateInviteLink: chat.generateInviteLink,
-    joinByInvite: chat.joinByInvite,
-    addMemberToGroup: chat.addMemberToGroup,
-    markConversationAsRead: chat.markConversationAsRead,
-    joinGroup: signalR.joinGroup,
-    addConversation: chat.addConversation,
-    clearMessages: chat.clearMessages,
+    signalR: signalR,
+    chat: chat,
+    fileUpload: fileUpload
   });
 
   // File handlers
@@ -228,6 +209,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     handleClearSearch,
     handleMarkAsRead: handlers.handleMarkAsRead,
     handleLoadMoreMessages: handlers.handleLoadMoreMessages,
+    chatHandlers: handlers
   };
   
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

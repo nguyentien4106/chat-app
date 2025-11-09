@@ -23,14 +23,8 @@ public class MessageRepository(EzyChatDbContext dbContext) : IMessageRepository
         IQueryable<Domain.Entities.Message> query = _dbSet;
 
         // Apply filter for messages before the specified DateTime
-        if (type == "group")
-        {
-            query = query.Where(m => m.CreatedAt < beforeDateTime && m.GroupId == id);
-        }
-        else
-        {
-            query = query.Where(m => m.CreatedAt < beforeDateTime && m.ConversationId == id);
-        }
+        query = type == "group" ? query.Where(m => m.CreatedAt < beforeDateTime && m.GroupId == id) 
+                            : query.Where(m => m.CreatedAt < beforeDateTime && m.ConversationId == id);
 
         // Include related properties if specified
         if (includeProperties != null)

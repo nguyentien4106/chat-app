@@ -47,15 +47,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const parseUserFromAccessToken = (token: string): void => {
     const currentUser = jwtDecode<AuthUser>(token);
-    
     setUser(currentUser);
   }
 
   const logout = async () => {
     try {
-      await authService.logout();
       Cookies.remove(ACCESSTOKEN_KEY);
       Cookies.remove(REFRESHTOKEN_KEY);
+      await authService.logout();
       setUser(null);
     } catch (error) {
       toast.error('Logout failed');

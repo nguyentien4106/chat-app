@@ -1,107 +1,57 @@
-using EzyChat.Application.DTOs.Common;
 using EzyChat.Application.DTOs.Messages;
 using EzyChat.Application.Hubs;
-using EzyChat.Application.Models;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
-
 namespace EzyChat.Application.Commands.Messages.SendMessage.Strategy;
 
 public class ConversationMessageStrategy(
     IRepository<Message> messageRepository,
     IRepository<Conversation> conversationRepository,
     IHubContext<ChatHub> hubContext,
-    ILogger<ConversationMessageStrategy> logger
+    IUserRepository userRepository
 ) : ISendMessageStrategy
 {
     public bool CanHandle(SendMessageCommand command)
     {
-        return !command.GroupId.HasValue;
+        return command.Type == "user" && command.ReceiverId.HasValue;
     }
 
     public async Task<AppResponse<MessageDto>> SendAsync(SendMessageCommand command, CancellationToken cancellationToken)
     {
         var message = command.Adapt<Message>();
+        var isNewConversation = command is { Type: "user", ConversationId: null };
+        var senderFullName = "";
         
-        // Get or create conversation
-        var (conversation, isNewConversation) = await GetOrCreateConversationAsync(command, cancellationToken);
-        message.ConversationId = conversation.Id;
-        
-        await messageRepository.AddAsync(message, cancellationToken);
-        
-        // Reload message with Sender navigation property
-        message = await messageRepository.GetByIdAsync(
-            message.Id, 
-            includeProperties: ["Sender"],
-            cancellationToken: cancellationToken) ?? message;
-
-        var messageDto = message.Adapt<MessageDto>();
-        messageDto.ReceiverId = command.ReceiverId ?? Guid.Empty;
-        messageDto.SenderUserName = message.Sender.UserName ?? string.Empty;
-        messageDto.IsNewConversation = isNewConversation;
-        messageDto.SenderFullName = message.Sender.GetFullName() ?? string.Empty;
-        
-        // Send via SignalR to the specific user
-        if (command.ReceiverId.HasValue)
+        if (isNewConversation)
         {
-            await hubContext.Clients.User(command.ReceiverId.ToString())
-                .SendAsync("ReceiveMessage", messageDto, cancellationToken);
+            var conversation = new Conversation
+            {
+                SenderId = command.SenderId,
+                ReceiverId = command.ReceiverId ?? Guid.Empty,
+                LastMessageAt = DateTime.UtcNow
+            };
+            await conversationRepository.AddAsync(conversation, cancellationToken);
+            message.ConversationId = conversation.Id;
+            var senderUser = await userRepository.GetByIdAsync(command.SenderId, cancellationToken: cancellationToken);
+            senderFullName = senderUser?.GetFullName();
+        }
+        else
+        {
+            message.ConversationId = command.ConversationId;
         }
 
+        await messageRepository.AddAsync(message, cancellationToken);
+        
+        var messageDto = message.Adapt<MessageDto>();
+        
+        messageDto.ReceiverId = command.ReceiverId ?? Guid.Empty;
+        messageDto.IsNewConversation = isNewConversation;
+        messageDto.SenderFullName = senderFullName ?? string.Empty;
+
+        // Send via SignalR to the specific user
+        await hubContext.Clients.User(command.ReceiverId!.Value.ToString())
+            .SendAsync("OnReceiveMessage", messageDto, cancellationToken);  
+        
         return AppResponse<MessageDto>.Success(messageDto);
     }
 
-    private async Task<(Conversation, bool)> GetOrCreateConversationAsync(SendMessageCommand command, CancellationToken cancellationToken)
-    {
-        // If ConversationId is provided, get existing conversation
-        if (command.ConversationId.HasValue)
-        {
-            var existingConversation = await conversationRepository.GetByIdAsync(
-                command.ConversationId.Value, 
-                includeProperties: ["Sender"],
-                cancellationToken: cancellationToken);
-            
-            if (existingConversation != null)
-            {
-                return (existingConversation, false);
-            }
-        }
-
-        // Create or find conversation based on sender and receiver
-        if (!command.ReceiverId.HasValue)
-        {
-            throw new InvalidOperationException("ReceiverId is required for conversation messages when ConversationId is not provided.");
-        }
-
-        return await GetOrCreateConversationAsync(
-            command.SenderId,
-            command.ReceiverId.Value,
-            cancellationToken);
-    }
-
-    private async Task<(Conversation, bool)> GetOrCreateConversationAsync(
-        Guid senderId, 
-        Guid receiverId, 
-        CancellationToken cancellationToken)
-    {
-        // Single query instead of parallel queries to avoid DbContext concurrency
-        var conversation = await conversationRepository.GetSingleAsync(
-            c => c.SenderId == senderId && c.ReceiverId == receiverId,
-            cancellationToken: cancellationToken);
-
-        if (conversation == null)
-        {
-            conversation = new Conversation
-            {
-                SenderId = senderId,
-                ReceiverId = receiverId,
-                LastMessageAt = DateTime.Now
-            };
-            await conversationRepository.AddAsync(conversation, cancellationToken);
-
-            return (conversation, true);
-        }
-
-        return (conversation, false);
-    }
 }

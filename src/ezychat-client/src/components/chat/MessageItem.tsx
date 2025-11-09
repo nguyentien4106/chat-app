@@ -31,6 +31,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       </div>
     );
   }
+  console.log('Rendering message:', showSender, message);
 
   return (
     <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>

@@ -8,8 +8,7 @@ public class ConversationDto
     public string LastMessage { get; set; } = string.Empty;
     public DateTime LastMessageAt { get; set; }
     public int UnreadCount { get; set; }
-    
-    public bool IsLastMessageMine { get; set; }
-    
     public string UserFullName { get; set; }
+    
+    public Guid LastMessageSenderId { get; set; }
 }

@@ -25,6 +25,13 @@ public class MessageConfiguration : IEntityTypeConfiguration<Message>
         builder.Property(e => e.FileType)
             .HasMaxLength(100);
         
+        // Configure CreatedAt and UpdatedAt as timestamp without timezone
+        builder.Property(e => e.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+        
+        builder.Property(e => e.UpdatedAt)
+            .HasColumnType("timestamp without time zone");
+        
         // Sender relationship
         builder.HasOne(e => e.Sender)
             .WithMany()
@@ -44,10 +51,8 @@ public class MessageConfiguration : IEntityTypeConfiguration<Message>
             .OnDelete(DeleteBehavior.Cascade);
         
         // Indexes for efficient querying
-        builder.HasIndex(e => e.ConversationId);
-        builder.HasIndex(e => e.GroupId);
-        builder.HasIndex(e => e.SenderId);
-        builder.HasIndex(e => e.CreatedAt);
+        builder.HasIndex(e => new { e.CreatedAt, e.GroupId });
+        builder.HasIndex(e => new { e.CreatedAt, e.ConversationId });
         
         // Add a check constraint to ensure a message belongs to either a Conversation OR a Group, not both
         builder.ToTable(t => t.HasCheckConstraint(

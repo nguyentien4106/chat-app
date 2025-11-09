@@ -8,6 +8,5 @@ public class GroupDto
     public Guid CreatedById { get; set; }
     public DateTime CreatedAt { get; set; }
     public int MemberCount { get; set; }
-
     public List<GroupMemberDto>? Members { get; set; }
 }

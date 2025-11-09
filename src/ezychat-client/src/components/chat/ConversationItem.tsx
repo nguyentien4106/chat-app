@@ -1,6 +1,7 @@
 import React from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Conversation } from "@/types/chat.types";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -13,6 +14,7 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({
   isActive,
   onSelect,
 }) => {
+  const { applicationUserId } = useAuth()
   return (
     <div
       onClick={onSelect}
@@ -29,7 +31,7 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({
         <div className="flex-1 min-w-0">
           <p className="font-medium truncate text-foreground">{conversation.userFullName}</p>
           <p className="text-sm text-muted-foreground truncate">
-            {conversation.isLastMessageMine ? "You: " : ""}
+            {conversation.lastMessageSenderId === applicationUserId ? "You: " : ""}
             {conversation.lastMessage}
           </p>
         </div>

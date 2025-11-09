@@ -103,7 +103,7 @@ public class EzyChatDbInitializer(
             PhoneNumberConfirmed = false,
             TwoFactorEnabled = false,
             LockoutEnabled = false,
-            Created = DateTime.Now,
+            Created = DateTime.UtcNow,
             CreatedBy = "System"
         };
 
@@ -141,7 +141,7 @@ public class EzyChatDbInitializer(
                 PhoneNumberConfirmed = true,
                 TwoFactorEnabled = true,
                 LockoutEnabled = true,
-                Created = DateTime.Now,
+                Created = DateTime.UtcNow,
                 CreatedBy = "System"
             });
         }

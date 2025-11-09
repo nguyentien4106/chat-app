@@ -23,7 +23,7 @@ public class JoinGroupHandler(
         {
             return AppResponse<Unit>.Fail("Group not found");
         }
-        if (group.InviteCodeExpiresAt < DateTime.Now)
+        if (group.InviteCodeExpiresAt < DateTime.UtcNow)
         {
             return AppResponse<Unit>.Fail("Expired invite code");
         }
@@ -46,7 +46,7 @@ public class JoinGroupHandler(
             Id = Guid.NewGuid(),
             GroupId = group.Id,
             UserId = request.UserId,
-            JoinedAt = DateTime.Now,
+            JoinedAt = DateTime.UtcNow,
             IsAdmin = false
         };
 
@@ -60,11 +60,12 @@ public class JoinGroupHandler(
             MessageType = MessageTypes.Notification,
             SenderId = newMember.Id,
             GroupId = group.Id,
-            CreatedAt = DateTime.Now,
+            CreatedAt = DateTime.UtcNow,
         };
+        group.MemberCount += 1;
         
         await messageRepository.AddAsync(notificationMessage, cancellationToken);
-
+        await groupRepository.UpdateAsync(group, cancellationToken);
         var groupDto = group.Adapt<GroupDto>();
         var messageDto = new MessageDto
         {
@@ -79,15 +80,14 @@ public class JoinGroupHandler(
 
         object data = new
         {
-            GroupId = group.Id,
             UserId = newMember.Id,
-            NewMemberName = newMember.UserName,
             Group = groupDto,
             Message = messageDto
         };
         
-        await signalRService.NotifyGroupAsync(group.Id.ToString(), "MemberAdded", data, cancellationToken);
-
+        await signalRService.NotifyGroupAsync(group.Id.ToString(), "OnGroupHasNewMember", data, cancellationToken);
+        await signalRService.NotifyUserAsync(newMember.Id.ToString(), "OnMemberJoinGroup", data, cancellationToken);
+        
         return AppResponse<Unit>.Success(Unit.Value);
     }
 }

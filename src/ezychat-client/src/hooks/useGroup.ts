@@ -46,7 +46,8 @@ export const useGroup = ({ groupId, isOpen, onClose, onGroupDeleted, onGroupLeft
     
     setIsLeaving(true);
     try {
-      await groupService.leaveGroup(groupId);
+      const result = await groupService.leaveGroup(groupId);
+      console.log(result)
       toast.success("You have left the group");
       onClose();
       onGroupLeft?.();

@@ -19,6 +19,16 @@ public class ConversationConfiguration : IEntityTypeConfiguration<Conversation>
         builder.Property(e => e.LastMessageAt)
             .IsRequired();
         
+        // Configure datetime columns as timestamp without timezone
+        builder.Property(e => e.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+        
+        builder.Property(e => e.UpdatedAt)
+            .HasColumnType("timestamp without time zone");
+        
+        builder.Property(e => e.LastMessageAt)
+            .HasColumnType("timestamp without time zone");
+        
         // Configure navigation properties with foreign keys
         builder.HasOne(e => e.Sender)
             .WithMany(u => u.ConversationsAsSender)

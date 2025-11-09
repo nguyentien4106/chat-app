@@ -42,9 +42,9 @@ public class GetUserConversationsHandler(
                 UserId = otherUserId,
                 UserName = otherUser.UserName ?? string.Empty,
                 LastMessage = lastMessage.Content ?? string.Empty,
+                LastMessageSenderId = lastMessage.SenderId,
                 LastMessageAt = conv.LastMessageAt,
                 UnreadCount = conv.Messages.Count(m => m.SenderId == otherUserId && !m.IsRead),
-                IsLastMessageMine = lastMessage.SenderId == request.UserId,
                 UserFullName = otherUser.GetFullName(),
             });
         }

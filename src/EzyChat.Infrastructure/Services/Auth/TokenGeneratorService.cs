@@ -19,7 +19,7 @@ public class TokenGeneratorService(JwtSettings jwtSettings, ILogger<TokenGenerat
             issuer: jwtSettings.Issuer,
             audience: jwtSettings.Audience,
             claims: claims ?? [],
-            expires: DateTime.Now.AddMinutes(expires),
+            expires: DateTime.UtcNow.AddMinutes(expires),
             signingCredentials: signInCredentials
         );
 

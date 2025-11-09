@@ -9,7 +9,7 @@ import { PaginationRequest } from '@/types';
 import { defaultPaginationRequest } from '@/constants';
 import { formatISO } from 'date-fns';
 
-interface UseChatReturn {
+export interface UseChatReturn {
   conversations: Conversation[];
   isLoadingConversations: boolean;
   hasMoreConversations: boolean;
@@ -37,7 +37,7 @@ interface UseChatReturn {
   markConversationAsRead: (conversationId: string, senderId: string) => Promise<void>;
 
   //Events
-  onGroupMemberEvent: (data: { groupId: string; event: 'memberAdded' | 'memberRemoved' }) => void;
+  onGroupMemberEvent: (data: { groupId: string; memberCount: number; group?: Group }) => void;
   onGroupEvent: (data: { groupId: string; event: 'createdGroup' | 'removedGroup', group: Group | null }) => void;
   onMessagesEvent: (message: Message) => void;
   onLastMessageEvent?: (message: Message) => void;
@@ -325,11 +325,11 @@ export const useChat = (): UseChatReturn => {
     });
   }, []);
 
-  const onGroupMemberEvent = ({ groupId, event }: { groupId: string; event: 'memberAdded' | 'memberRemoved' }) => {
+  const onGroupMemberEvent = ({ groupId, memberCount }: { groupId: string; memberCount: number, group?: Group }) => {
     setGroups(prev => {
       const updatedGroups = prev.map(g => {
         if (g.id === groupId) {
-          return { ...g, memberCount: event === 'memberAdded' ? g.memberCount + 1 : g.memberCount - 1 };
+          return { ...g, memberCount : memberCount  };
         }
         return g;
       });

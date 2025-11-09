@@ -46,7 +46,7 @@ public class GroupsController(IMediator mediator) : AuthenticatedControllerBase
         {
             GroupId = groupId,
             UserId = CurrentUserId,
-            BeforeDateTime = beforeDateTime ?? DateTime.Now
+            BeforeDateTime = beforeDateTime ?? DateTime.UtcNow
         };
         var response = await mediator.Send(query);
         return Ok(response);
@@ -102,7 +102,7 @@ public class GroupsController(IMediator mediator) : AuthenticatedControllerBase
     }
 
     [HttpPost("join/{inviteCode}")]
-    public async Task<ActionResult<AppResponse<Unit>>> JoinByInvite(string inviteCode)
+    public async Task<ActionResult<AppResponse<bool>>> JoinByInvite(string inviteCode)
     {
         var userId = CurrentUserId;
         var command = new JoinGroupByInviteCommand
@@ -128,7 +128,7 @@ public class GroupsController(IMediator mediator) : AuthenticatedControllerBase
     }
     
     [HttpDelete("{groupId}/members")]
-    public async Task<ActionResult<AppResponse<Unit>>> RemoveMember(Guid groupId, [FromBody] RemoveMemberRequest request)
+    public async Task<ActionResult<AppResponse<bool>>> RemoveMember(Guid groupId, [FromBody] RemoveMemberRequest request)
     {
         var command = new RemoveMemberFromGroupCommand
         {
@@ -154,7 +154,7 @@ public class GroupsController(IMediator mediator) : AuthenticatedControllerBase
     }
 
     [HttpDelete("{groupId}")]
-    public async Task<ActionResult<AppResponse<Unit>>> DeleteGroup(Guid groupId)
+    public async Task<ActionResult<AppResponse<bool>>> DeleteGroup(Guid groupId)
     {
         var userId = CurrentUserId;
         var command = new DeleteGroupCommand

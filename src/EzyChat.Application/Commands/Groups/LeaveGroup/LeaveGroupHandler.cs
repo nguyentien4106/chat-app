@@ -24,28 +24,30 @@ public class LeaveGroupHandler(
         if (group == null)
             return AppResponse<Unit>.Fail("Group not found");
 
-        var member = await groupMemberRepository.GetSingleAsync(
+        var memberToRemove = await groupMemberRepository.GetSingleAsync(
             gm => gm.GroupId == request.GroupId && gm.UserId == request.UserId,
             includeProperties: ["User"],
             cancellationToken: cancellationToken
         );
 
-        if (member == null)
+        if (memberToRemove == null)
         {
             return AppResponse<Unit>.Fail("You are not a member of this group");
         }
         // Prevent the group creator from leaving
-        if (member.UserId == group.CreatedById)
+        if (memberToRemove.UserId == group.CreatedById)
         {
             return AppResponse<Unit>.Fail("Group creator cannot leave the group. Please transfer ownership or delete the group.");
         }
-        await groupMemberRepository.DeleteAsync(member, cancellationToken: cancellationToken);
-
+        group.MemberCount -= 1;
+        
+        await groupMemberRepository.DeleteAsync(memberToRemove, cancellationToken: cancellationToken);
+        await groupRepository.UpdateAsync(group, cancellationToken);
         // Create notification message
         var notificationMessage = new Message
         {
             Id = Guid.NewGuid(),
-            Content = $"{member.User.UserName} left the group",
+            Content = $"{memberToRemove.User.UserName} left the group",
             MessageType = MessageTypes.Notification,
             SenderId = request.UserId,
             GroupId = request.GroupId,
@@ -56,12 +58,13 @@ public class LeaveGroupHandler(
         object data = new
         {
             GroupId = request.GroupId,
-            UserId = request.UserId,
-            MemberName = member.User.UserName,
-            Group = group.Adapt<GroupDto>(),
-            Message = messageDto
+            RemoveMemberId = memberToRemove.Id,
+            Message = messageDto,
+            MemberCount = group.MemberCount 
         };
-        await signalRService.NotifyGroupAsync(request.GroupId.ToString(), "MemberLeft", data, cancellationToken);
+        
+        await signalRService.NotifyGroupAsync(request.GroupId.ToString(), "OnGroupHasMemberLeft", data, cancellationToken);
+        await signalRService.NotifyUserAsync(memberToRemove.Id.ToString(), "OnMemberLeftGroup", data, cancellationToken);
 
         return AppResponse<Unit>.Success(Unit.Value);
     }

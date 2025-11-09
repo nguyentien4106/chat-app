@@ -34,10 +34,6 @@ export const authService = {
     return apiService.post<{ accessToken: string; refreshToken: string }>('/api/auth/refresh', { refreshToken });
   },
   forgotPassword: async (email: string): Promise<ForgotPasswordResponse> => {
-    // For demo purposes - replace with actual API endpoint
-    // return apiService.post<ForgotPasswordResponse>('/api/auth/forgot-password', { email });
-    
-    // Mock forgot password for demo
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     // Simulate checking if email exists
@@ -52,8 +48,6 @@ export const authService = {
   },
 
   resetPassword: async (token: string, password: string): Promise<ForgotPasswordResponse> => {
-    // return apiService.post<ForgotPasswordResponse>('/api/auth/reset-password', { token, password });
-    
     // Mock reset password for demo
     await new Promise(resolve => setTimeout(resolve, 1500));
     
@@ -68,8 +62,6 @@ export const authService = {
   },
 
   verifyResetToken: async (token: string): Promise<boolean> => {
-    // return apiService.get<{ valid: boolean }>(`/api/auth/verify-reset-token/${token}`);
-    
     // Mock token verification
     await new Promise(resolve => setTimeout(resolve, 500));
     return token.length > 10; // Simple mock validation

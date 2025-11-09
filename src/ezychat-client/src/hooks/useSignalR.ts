@@ -9,17 +9,26 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const SIGNALR_HUB_URL = import.meta.env.VITE_SIGNALR_HUB_URL || 'http://localhost:5000/hubs/chat';
 
-interface UseSignalRReturn {
+export interface UseSignalRReturn {
   connection: signalR.HubConnection | null;
   isConnected: boolean;
+
+  // actions 
   sendMessage: (message: SendMessageRequest) => Promise<Message | undefined>;
   joinGroup: (groupId: string) => Promise<void>;
   leaveGroup: (groupId: string) => Promise<void>;
+  
+  // onMessage events
   onReceiveMessage: (callback: (message: Message) => void) => void;
-  onMemberAdded: (callback: (data: { groupId: string; userId: string; group: Group; message: Message }) => void) => void;
-  onMemberRemoved: (callback: (data: { groupId: string; userId: string, message: Message }) => void) => void;
-  onMemberLeft: (callback: (data: { groupId: string; userId: string, message: Message}) => void) => void;
+  
+  // onGroup events
+  onGroupHasNewMember: (callback: (data: { newMemberId: string, group: Group; message: Message }) => void) => void;
+  onGroupHasMemberLeft: (callback: (data: { removeMemberId: string, groupId: string; message: Message, memberCount: number }) => void) => void;
   onGroupDeleted: (callback: (data: { groupId: string; groupName: string }) => void) => void;
+  
+  // onMember events
+  onMemberLeftGroup: (callback: (data: {  removeMemberId: string, groupId: string; message: Message, memberCount: number }) => void) => void;
+  onMemberJoinGroup: (callback: (data: { newMemberId: string; group: Group; message: Message }) => void) => void;
 }
 
 export const useSignalR = (): UseSignalRReturn => {
@@ -46,8 +55,6 @@ export const useSignalR = (): UseSignalRReturn => {
 
       // If token expires in less than 1 minute, refresh it
       if (timeUntilExpiry < 60000) {
-        console.log('Token expired or about to expire, refreshing...');
-        
         if (isRefreshingToken.current) {
           // Wait for ongoing refresh
           await new Promise(resolve => setTimeout(resolve, 1000));
@@ -58,14 +65,12 @@ export const useSignalR = (): UseSignalRReturn => {
         try {
           const refreshToken = Cookies.get(REFRESHTOKEN_KEY);
           if (!refreshToken) {
-            console.error('No refresh token available');
             return null;
           }
 
           const response = await authService.refreshToken(refreshToken);
           Cookies.set(ACCESSTOKEN_KEY, response.accessToken);
           Cookies.set(REFRESHTOKEN_KEY, response.refreshToken);
-          console.log('Token refreshed successfully');
           return response.accessToken;
         } catch (error) {
           console.error('Failed to refresh token:', error);
@@ -257,90 +262,74 @@ export const useSignalR = (): UseSignalRReturn => {
     }
   }, [connection, isConnected]);
 
+  // onMessage events 
   const onReceiveMessage = useCallback((callback: (message: Message) => void) => {
     if (connection) {
-      connection.off('ReceiveMessage');
-      connection.on('ReceiveMessage', callback);
+      connection.off('OnReceiveMessage');
+      connection.on('OnReceiveMessage', callback);
     }
   }, [connection]);
 
-  const onMemberAdded = useCallback((callback: (data: { groupId: string; userId: string, group: Group, message: Message }) => void) => {
+  // onMember events
+
+  const onMemberLeftGroup = useCallback((callback: (data: any) => void) => {
     if (connection) {
-      connection.off('MemberAdded');
-      connection.on('MemberAdded', callback);
+      connection.off('OnMemberLeftGroup');
+      connection.on('OnMemberLeftGroup', (data) => {
+        leaveGroup(data.group.id);
+        callback(data);
+      });
     }
   }, [connection]);
 
-  const onMemberRemoved = useCallback((callback: (data: { groupId: string; userId: string, message: Message}) => void) => {
+  const onMemberJoinGroup = useCallback((callback: (data: any) => void) => {
     if (connection) {
-      connection.off('MemberRemoved');
-      connection.on('MemberRemoved', async (data: { groupId: string; userId: string, message: Message}) => {
-        // Call the user's callback first
+      connection.off('OnMemberJoinGroup');
+      connection.on('OnMemberJoinGroup', async (data) => {
+        await joinGroup(data.group.id);
         callback(data);
-        
-        // Automatically leave the group on the server side
-        if (connection && isConnected) {
-          try {
-            await connection.invoke('LeaveGroup', data.groupId);
-            console.log(`Automatically left group ${data.groupId} after member removal`);
-          } catch (err) {
-            console.error('Failed to leave group on server after removal:', err);
-          }
-        }
       });
     }
-  }, [connection, isConnected]);
+  }, [connection]);
 
-  const onMemberLeft = useCallback((callback: (data: { groupId: string; userId: string, message: Message }) => void) => {
+  // onGroup events
+
+  const onGroupHasNewMember = useCallback((callback: (data: any) => void) => {
     if (connection) {
-      connection.off('MemberLeft');
-      connection.on('MemberLeft', async (data: { groupId: string; userId: string, message: Message }) => {
-        // Call the user's callback first
-        callback(data);
-        
-        // Automatically leave the group on the server side
-        if (connection && isConnected) {
-          try {
-            await connection.invoke('LeaveGroup', data.groupId);
-            console.log(`Automatically left group ${data.groupId} after leaving`);
-          } catch (err) {
-            console.error('Failed to leave group on server after leaving:', err);
-          }
-        }
-      });
+      connection.off('OnGroupHasNewMember');
+      connection.on('OnGroupHasNewMember', callback);
+    }
+  }, [connection]);
+
+  const onGroupHasMemberLeft = useCallback((callback: (data: any) => void) => {
+    if (connection) {
+      connection.off('OnGroupHasMemberLeft');
+      connection.on('OnGroupHasMemberLeft', callback);
     }
   }, [connection, isConnected]);
 
   const onGroupDeleted = useCallback((callback: (data: { groupId: string; groupName: string }) => void) => {
     if (connection) {
       connection.off('GroupDeleted');
-      connection.on('GroupDeleted', async (data: { groupId: string; groupName: string }) => {
-        // Call the user's callback first
-        callback(data);
-        
-        // Automatically leave the group on the server side when deleted
-        if (connection && isConnected) {
-          try {
-            await connection.invoke('LeaveGroup', data.groupId);
-            console.log(`Automatically left deleted group ${data.groupId}`);
-          } catch (err) {
-            console.error('Failed to leave deleted group on server:', err);
-          }
-        }
-      });
+      connection.on('GroupDeleted', callback);
     }
   }, [connection, isConnected]); 
 
   return {
     connection,
     isConnected,
+
     sendMessage,
     joinGroup,
     leaveGroup,
+    
     onReceiveMessage,
-    onMemberAdded,
-    onMemberRemoved,
-    onMemberLeft,
+    
+    onGroupHasNewMember,
+    onGroupHasMemberLeft,
     onGroupDeleted,
+
+    onMemberLeftGroup,
+    onMemberJoinGroup
   };
 };

@@ -10,6 +10,10 @@ public class GroupMemberConfiguration : IEntityTypeConfiguration<GroupMember>
     {
         builder.HasKey(e => e.Id);
         
+        // Configure datetime columns as timestamp without timezone
+        builder.Property(e => e.JoinedAt)
+            .HasColumnType("timestamp without time zone");
+        
         builder.HasOne(e => e.Group)
             .WithMany(g => g.Members)
             .HasForeignKey(e => e.GroupId)

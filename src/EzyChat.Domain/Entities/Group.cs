@@ -10,6 +10,8 @@ public class Group : Entity<Guid>
     public Guid CreatedById { get; set; }
     public string? InviteCode { get; set; }
     public DateTime? InviteCodeExpiresAt { get; set; }
+    
+    public int MemberCount { get; set; }
     public ICollection<GroupMember> Members { get; set; } = new List<GroupMember>();
     public ICollection<Message> Messages { get; set; } = new List<Message>();
 }

@@ -44,7 +44,7 @@ export interface Conversation {
   lastMessage: string;
   lastMessageAt?: Date;
   unreadCount: number;
-  isLastMessageMine?: boolean;
+  lastMessageSenderId?: string;
 }
 
 export interface Group {
@@ -94,6 +94,9 @@ export interface SendMessageRequest {
   fileName?: string;
   fileType?: string;
   fileSize?: number;
+  type: "user" | "group";
+  groupName?: string;
+  senderUserName?: string;
 }
 
 export interface FileUploadResponse {

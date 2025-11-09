@@ -1,7 +1,9 @@
 import { useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import type { HubConnection } from '@microsoft/signalr';
-import { ActiveChat, Message, Group, Conversation } from '@/types/chat.types';
+import { ActiveChat, Message, Group } from '@/types/chat.types';
+import { UseChatReturn } from './useChat';
+import { UseSignalRReturn } from './useSignalR';
 
 interface UseSignalREventsProps {
   connection: HubConnection | null;
@@ -9,16 +11,8 @@ interface UseSignalREventsProps {
   setActiveChat: (chat: ActiveChat | null) => void;
   currentUserId: string | undefined;
   groups: Group[];
-  onMessagesEvent: (message: Message) => void;
-  onLastMessageEvent?: (message: Message) => void;
-  onGroupMemberEvent: (data: { groupId: string; event: 'memberAdded' | 'memberRemoved' }) => void;
-  onGroupEvent: (data: { groupId: string; event: 'createdGroup' | 'removedGroup', group: Group | null }) => void;
-  onReceiveMessage: (callback: (message: Message) => void) => void;
-  onMemberAdded: (callback: (data: any) => void) => void;
-  onMemberRemoved: (callback: (data: any) => void) => void;
-  onMemberLeft: (callback: (data: any) => void) => void;
-  onGroupDeleted: (callback: (data: any) => void) => void;
-  addConversation: (conversation: Conversation  ) => void;
+  chat: UseChatReturn
+  signalR: UseSignalRReturn
 }
 
 export const useSignalREvents = ({
@@ -27,16 +21,8 @@ export const useSignalREvents = ({
   setActiveChat,
   currentUserId,
   groups,
-  onMessagesEvent,
-  onLastMessageEvent,
-  onGroupMemberEvent,
-  onGroupEvent,
-  onReceiveMessage,
-  onMemberAdded,
-  onMemberRemoved,
-  onMemberLeft,
-  onGroupDeleted,
-  addConversation
+  chat,
+  signalR
 }: UseSignalREventsProps) => {
 
   const isCurrentUser = useCallback((userId: string): boolean => {
@@ -67,98 +53,123 @@ export const useSignalREvents = ({
     return activeChat?.type === 'group' && activeChat.groupId === groupId;
   }, [activeChat]);
 
+  const updateChatSideBar = useCallback((message: Message) => {
+    // Update chat sidebar last message and unread count
+    if(message.isNewConversation && thisUserReceivedMessage(message)) {
+      // New conversation started
+      chat.addConversation({
+        id: message.conversationId,
+        lastMessage: message.content ?? "",
+        lastMessageAt: message.createdAt,
+        userId: message.senderId!,
+        userName: message.senderUserName!,
+        userFullName: message.senderFullName!,
+        unreadCount: 1,
+      })
+    }
+    else if (thisUserReceivedMessage(message)) {
+      chat.onLastMessageEvent && chat.onLastMessageEvent(message);
+    }
+  }, []);
+
+  const updateInsideChat = useCallback((message: Message) => {
+    if ((thisUserOpeningConversation(message.conversationId) && thisUserReceivedMessage(message)) ||
+        (thisUserOpeningGroup(message.groupId) && activeChat?.id === message.groupId)
+    ) {
+      chat.onMessagesEvent(message);
+    }
+  }, [activeChat, chat.onMessagesEvent, thisUserOpeningConversation, thisUserReceivedMessage, thisUserOpeningGroup]);
+
+  const updateNotifications = useCallback((message: Message) => {
+    // Show notification for direct messages
+    if (currentUserId && thisUserReceivedMessage(message) && message.senderId !== currentUserId) {
+      toast.info(message.senderUserName, {
+        description: message.content,
+        duration: 5000,
+      });
+    }
+
+    // Show notification for group messages
+    if (message.groupId && message.senderId !== currentUserId && hasGroupNotification(message.groupId) && !thisUserOpeningGroup(message.groupId)) {
+      toast.info(`${message.groupName}`, {
+        description: `${message.senderUserName}: ${message.content}`,
+        duration: 5000,
+      });
+    }
+  }, [currentUserId, hasGroupNotification, thisUserReceivedMessage, thisUserOpeningGroup]);
+  
   useEffect(() => {
     if (!connection) return;
 
-    onReceiveMessage((message) => {
-      if(message.isNewConversation && thisUserReceivedMessage(message)) {
-        // New conversation started
-        addConversation({
-          id: message.conversationId,
-          lastMessage: message.content ?? "",
-          lastMessageAt: message.createdAt,
-          userId: message.senderId!,
-          userName: message.senderUserName!,
-          userFullName: message.senderFullName!,
-          unreadCount: 1,
-        })
-      }
-      else if (thisUserReceivedMessage(message)) {
-        onLastMessageEvent && onLastMessageEvent(message);
-      }
-      
-      if (
-        activeChat &&
-        ((thisUserOpeningConversation(message.conversationId) && thisUserReceivedMessage(message)) ||
-          (thisUserOpeningGroup(message.groupId) && activeChat.id === message.groupId))
-      ) {
-        onMessagesEvent(message);
+    // on message event
+    signalR.onReceiveMessage((message) => {
+      console.log('Received message signalr event', message);
+      updateChatSideBar(message);
+      updateNotifications(message);
+
+      if(activeChat){
+        updateInsideChat(message);
       }
 
-      // Show notification for direct messages
-      if (currentUserId && thisUserReceivedMessage(message) && message.senderId !== currentUserId) {
-        toast.info(message.senderUserName, {
-          description: message.content,
-          duration: 5000,
-        });
-      }
-      
-      // Show notification for group messages
-      if (message.groupId && message.senderId !== currentUserId && hasGroupNotification(message.groupId) && !thisUserOpeningGroup(message.groupId)) {
-        toast.info(`${message.groupName}`, {
-          description: `${message.senderUserName}: ${message.content}`,
-          duration: 5000,
-        });
-      }
     });
     
-    onMemberAdded((data) => {
+    // on group event
+    signalR.onGroupHasNewMember((data) => {
       console.log('Member added to group signalr event', data);
-      onGroupMemberEvent({ groupId: data.groupId, event: 'memberAdded' });
+      chat.onGroupMemberEvent({ group: data.group, groupId: data.group.id, memberCount: data.group.memberCount });
 
-      if (groupOpening(data.groupId)) {
-        onMessagesEvent(data.message);
+      if (groupOpening(data.group.id)) {
+        chat.onMessagesEvent(data.message);
       }
 
-      if (isCurrentUser(data.userId)) {
-        onGroupEvent({ groupId: data.groupId, event: 'createdGroup', group: data.group });
+      if (isCurrentUser(data.newMemberId)) {
+        chat.onGroupEvent({ groupId: data.group.id, event: 'createdGroup', group: data.group });
         toast.success(`You are added to group ${data.group.name}`);
       }
     });
 
-    onMemberRemoved((data) => {
-      onGroupMemberEvent({ groupId: data.groupId, event: 'memberRemoved' });
+    signalR.onGroupHasMemberLeft((data) => {
+      chat.onGroupMemberEvent({ groupId: data.groupId, memberCount: data.memberCount });
       if (groupOpening(data.groupId)) {
-        onMessagesEvent(data.message);
+        chat.onMessagesEvent(data.message);
       }
 
-      if (isCurrentUser(data.userId)) {
-        onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
+      if (isCurrentUser(data.removeMemberId)) {
+        chat.onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
       }
 
-      if (currentUserOpeningGroup(data.groupId, data.userId)) {
+      if (currentUserOpeningGroup(data.groupId, data.removeMemberId)) {
         setActiveChat(null);
         toast.info('You have been removed from the group');
       }
     });
 
-    onMemberLeft((data) => {
-      onGroupMemberEvent({ groupId: data.groupId, event: 'memberRemoved' });
 
-      if (isCurrentUser(data.userId)) {
-        toast.info('You have left the group');
+    signalR.onGroupDeleted((data) => {
+      chat.onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
+    })
+
+    // onMember event
+
+    signalR.onMemberJoinGroup((data) => {
+      console.log('onMemberJoinGroup', data)
+      if(!isCurrentUser(data.newMemberId)) return;
+
+      chat.onGroupEvent({ groupId: data.group.id, event: 'createdGroup', group: data.group });
+      toast.success(`You are added to group ${data.group.name}`);
+    });
+
+    signalR.onMemberLeftGroup((data) => {
+      if (isCurrentUser(data.removeMemberId)) {
         setActiveChat(null);
-        onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
+        chat.onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
       }
 
       if (groupOpening(data.groupId)) {
-        onMessagesEvent(data.message);
+        chat.onMessagesEvent(data.message);
       }
     });
 
-    onGroupDeleted((data) => {
-      onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
-    })
   }, [
     connection,
     activeChat,
@@ -167,14 +178,13 @@ export const useSignalREvents = ({
     hasGroupNotification,
     groupOpening,
     isCurrentUser,
-    onMessagesEvent,
-    onGroupMemberEvent,
-    onGroupEvent,
-    onReceiveMessage,
-    onMemberAdded,
-    onMemberRemoved,
-    onMemberLeft,
-    onLastMessageEvent,
+    chat.onMessagesEvent,
+    chat.onGroupMemberEvent,
+    chat.onGroupEvent,
+    chat.onLastMessageEvent,
+    signalR.onReceiveMessage,
+    signalR.onGroupHasNewMember,
+    signalR.onGroupHasMemberLeft,
     setActiveChat,
     currentUserOpeningGroup,
   ]);

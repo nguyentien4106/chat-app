@@ -11,7 +11,16 @@ interface FileUploadResponse {
   messageType: number;
 }
 
-export const useFileUpload = () => {
+export interface FileUploadReturn {
+  isUploading: boolean;
+  selectedFile: File | null;
+  previewUrl: string | null;
+  selectFile: (file: File, isImage: boolean) => void;
+  clearSelection: () => void;
+  uploadFile: (file: File) => Promise<FileUploadResponse>;
+}
+
+export const useFileUpload = (): FileUploadReturn => {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -59,5 +68,5 @@ export const useFileUpload = () => {
     selectFile,
     clearSelection,
     uploadFile
-  };
+  }
 };

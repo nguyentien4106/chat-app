@@ -39,12 +39,13 @@ public class AddMemberToGroupHandler(
             Id = Guid.NewGuid(),
             GroupId = request.GroupId,
             UserId = newMember.Id,
-            JoinedAt = DateTime.Now,
+            JoinedAt = DateTime.UtcNow,
             IsAdmin = false
         };
-
+        group.MemberCount += 1;
         await groupMemberRepository.AddAsync(groupMember, cancellationToken);
-
+        await groupRepository.UpdateAsync(group, cancellationToken);
+        
         // Create notification message
         var notificationMessage = new Message
         {
@@ -53,7 +54,7 @@ public class AddMemberToGroupHandler(
             MessageType = MessageTypes.Notification,
             SenderId = newMember.Id,
             GroupId = request.GroupId,
-            CreatedAt = DateTime.Now,
+            CreatedAt = DateTime.UtcNow,
         };
 
         await messageRepository.AddAsync(notificationMessage, cancellationToken);
@@ -71,15 +72,13 @@ public class AddMemberToGroupHandler(
 
         object data = new
         {
-            GroupId = request.GroupId,
-            UserId = newMember.Id,
-            NewMemberName = newMember.UserName,
+            NewMemberId = newMember.Id,
             Group = groupDto,
             Message = messageDto
         };
         
-        await signalRService.NotifyGroupAsync(request.GroupId.ToString(), "MemberAdded", data, cancellationToken);
-        await signalRService.NotifyUserAsync(newMember.Id.ToString(), "MemberAdded", data, cancellationToken);
+        await signalRService.NotifyGroupAsync(request.GroupId.ToString(), "OnGroupHasNewMember", data, cancellationToken);
+        await signalRService.NotifyUserAsync(newMember.Id.ToString(), "OnMemberJoinGroup", data, cancellationToken);
 
         return AppResponse<Unit>.Success(Unit.Value);
     }
