@@ -16,11 +16,13 @@ const formatFileSize = (bytes?: number): string => {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 };
 
-export const MessageItem: React.FC<MessageItemProps> = ({
+export const MessageItem: React.FC<MessageItemProps> = React.memo(({
   message,
   isOwn,
   showSender = false,
 }) => {
+
+  console.log("Rendering MessageItem:", message);
   // Notification messages - centered and styled differently
   if (message.messageType === MessageType.Notification) {
     return (
@@ -31,7 +33,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       </div>
     );
   }
-  console.log('Rendering message:', showSender, message);
 
   return (
     <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
@@ -87,4 +88,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       </div>
     </div>
   );
-};
+});
+
+MessageItem.displayName = 'MessageItem';

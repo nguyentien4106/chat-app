@@ -9,7 +9,7 @@ interface ConversationItemProps {
   onSelect: () => void;
 }
 
-export const ConversationItem: React.FC<ConversationItemProps> = ({
+export const ConversationItem: React.FC<ConversationItemProps> = React.memo(({
   conversation,
   isActive,
   onSelect,
@@ -43,4 +43,6 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({
       </div>
     </div>
   );
-};
+});
+
+ConversationItem.displayName = 'ConversationItem';
