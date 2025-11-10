@@ -346,7 +346,12 @@ export const useChat = (): UseChatReturn => {
       setConversations(prev => {
         return prev.map(conv => {
           if (conv.id === message.conversationId) {
-            return { ...conv, lastMessage: message.content || '', unreadCount: conv.unreadCount + (message.receiverId === applicationUserId ? 1 : 0) };
+            return { 
+              ...conv, 
+              lastMessage: message.content || '', 
+              lastMessageSenderId: message.senderId,
+              unreadCount: conv.unreadCount + (message.receiverId === applicationUserId ? 1 : 0) 
+            };
           }
           return conv;
         });

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Collections.Concurrent;
 using EzyChat.Application.Commands.Messages.SendMessage;
 using EzyChat.Application.DTOs.Messages;
 using MediatR;
@@ -15,6 +16,12 @@ public class ChatHub(
     IRepository<Group> groupRepository)
     : Hub
 {
+    // Track which users are in which groups: groupId -> HashSet<userId>
+    private static readonly ConcurrentDictionary<string, HashSet<string>> GroupConnections = new();
+    
+    // Track user's connection IDs: userId -> HashSet<connectionId>
+    private static readonly ConcurrentDictionary<string, HashSet<string>> UserConnections = new();
+    
     private string? GetUserId()
     {
         // Try ClaimTypes.NameIdentifier first
@@ -39,6 +46,19 @@ public class ChatHub(
         var userId = GetUserId();
         if (!string.IsNullOrEmpty(userId))
         {
+            // Track user connection
+            UserConnections.AddOrUpdate(
+                userId,
+                new HashSet<string> { Context.ConnectionId },
+                (key, existing) =>
+                {
+                    lock (existing)
+                    {
+                        existing.Add(Context.ConnectionId);
+                        return existing;
+                    }
+                });
+            
             // Join user to their personal channel
             await Groups.AddToGroupAsync(Context.ConnectionId, userId);
 
@@ -46,7 +66,21 @@ public class ChatHub(
             var groups = await groupRepository.GetAllAsync(g => g.Members.Any(m => m.UserId == Guid.Parse(userId)));   
             foreach (var group in groups)
             {
-                await Groups.AddToGroupAsync(Context.ConnectionId, group.Id.ToString());
+                var groupIdStr = group.Id.ToString();
+                await Groups.AddToGroupAsync(Context.ConnectionId, groupIdStr);
+                
+                // Track group connection
+                GroupConnections.AddOrUpdate(
+                    groupIdStr,
+                    new HashSet<string> { userId },
+                    (key, existing) =>
+                    {
+                        lock (existing)
+                        {
+                            existing.Add(userId);
+                            return existing;
+                        }
+                    });
             }
         }
 
@@ -55,7 +89,37 @@ public class ChatHub(
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        logger.LogInformation($"User ({GetUserId()}) disconnected");   
+        var userId = GetUserId();
+        if (!string.IsNullOrEmpty(userId))
+        {
+            // Remove connection from user connections
+            if (UserConnections.TryGetValue(userId, out var connections))
+            {
+                lock (connections)
+                {
+                    connections.Remove(Context.ConnectionId);
+                    if (connections.Count == 0)
+                    {
+                        UserConnections.TryRemove(userId, out _);
+                        
+                        // Remove user from all groups if they have no more connections
+                        foreach (var groupEntry in GroupConnections)
+                        {
+                            lock (groupEntry.Value)
+                            {
+                                groupEntry.Value.Remove(userId);
+                                if (groupEntry.Value.Count == 0)
+                                {
+                                    GroupConnections.TryRemove(groupEntry.Key, out _);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        logger.LogInformation($"User ({userId}) disconnected");   
         await base.OnDisconnectedAsync(exception);
     }
 
@@ -84,6 +148,36 @@ public class ChatHub(
     {
         logger.LogInformation($"User ({GetUserId()}) leaving group {groupId}");   
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupId.ToString());
+    }
+    
+    /// <summary>
+    /// Remove a user from a group by their userId (removes all their connections from that group)
+    /// </summary>
+    public async Task RemoveUserFromGroup(Guid groupId, string userId)
+    {
+        var groupIdStr = groupId.ToString();
+        
+        // Get all connection IDs for this user
+        if (UserConnections.TryGetValue(userId, out var connectionIds))
+        {
+            // Remove each connection from the SignalR group
+            foreach (var connectionId in connectionIds.ToList())
+            {
+                await Groups.RemoveFromGroupAsync(connectionId, groupIdStr);
+            }
+        }
+        
+        // Remove user from group connections tracking
+        if (GroupConnections.TryGetValue(groupIdStr, out var users))
+        {
+            users.Remove(userId);
+            if (users.Count == 0)
+            {
+                GroupConnections.TryRemove(groupIdStr, out _);
+            }
+        }
+        
+        logger.LogInformation($"Removed user {userId} from group {groupIdStr}");
     }
 
     public async Task UserTyping(Guid? receiverId, Guid? groupId)

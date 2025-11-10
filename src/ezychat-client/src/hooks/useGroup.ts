@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { GroupInfo } from "@/types/chat.types";
 import { groupService } from "@/services/groupService";
 import { toast } from "sonner";
+import { useSignalR } from "./useSignalR";
 
 interface UseGroupOptions {
   groupId: string;
@@ -19,7 +20,8 @@ export const useGroup = ({ groupId, isOpen, onClose, onGroupDeleted, onGroupLeft
   const [isLeaving, setIsLeaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
+  const { leaveGroup } = useSignalR();
+  
   const fetchGroupInfo = useCallback(async () => {
     if (!groupId) return;
     
@@ -46,8 +48,8 @@ export const useGroup = ({ groupId, isOpen, onClose, onGroupDeleted, onGroupLeft
     
     setIsLeaving(true);
     try {
-      const result = await groupService.leaveGroup(groupId);
-      console.log(result)
+      await leaveGroup(groupId);  
+      await groupService.leaveGroup(groupId);
       toast.success("You have left the group");
       onClose();
       onGroupLeft?.();

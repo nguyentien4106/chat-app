@@ -69,13 +69,14 @@ public class RemoveMemberFromGroupHandler(
         var data = new
         {
             GroupId = request.GroupId, 
-            UserId = request.UserId, 
-            Message = message
+            RemoveMemberId = request.UserId, 
+            Message = message,
+            MemberCount = group.MemberCount,
         };
         
         await signalRService.NotifyGroupAsync(request.GroupId.ToString(), "OnGroupHasMemberLeft", data, cancellationToken);
         await signalRService.NotifyUserAsync(memberToRemove.Id.ToString(), "OnMemberLeftGroup", data, cancellationToken);
-        
+
         return AppResponse<Unit>.Success(Unit.Value);
     }
 }

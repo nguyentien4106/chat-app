@@ -58,13 +58,13 @@ public class LeaveGroupHandler(
         object data = new
         {
             GroupId = request.GroupId,
-            RemoveMemberId = memberToRemove.Id,
+            RemoveMemberId = request.UserId,
             Message = messageDto,
             MemberCount = group.MemberCount 
         };
         
         await signalRService.NotifyGroupAsync(request.GroupId.ToString(), "OnGroupHasMemberLeft", data, cancellationToken);
-        await signalRService.NotifyUserAsync(memberToRemove.Id.ToString(), "OnMemberLeftGroup", data, cancellationToken);
+        await signalRService.NotifyUserAsync(request.UserId.ToString(), "OnMemberLeftGroup", data, cancellationToken);
 
         return AppResponse<Unit>.Success(Unit.Value);
     }

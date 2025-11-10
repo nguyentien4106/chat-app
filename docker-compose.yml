@@ -46,10 +46,10 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:6060
-      ConnectionStrings__DefaultConnection: "Host=postgres;Database=ezychatIntegration;Username=postgres;Password=Ti100600@;"
-      JwtSettings__Issuer: "http://18.142.136.235"
-      JwtSettings__Audience: "http://18.142.136.235"
-      JwtSettings__AccessTokenExpirationMinutes: 60
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=EzyChatDb;Username=postgres;Password=Ti100600@;"
+      JwtSettings__Issuer: "http://54.151.135.81"
+      JwtSettings__Audience: "http://54.151.135.81"
+      JwtSettings__AccessTokenExpirationMinutes: 1440
     ports:
       - "6060:6060"
     networks:

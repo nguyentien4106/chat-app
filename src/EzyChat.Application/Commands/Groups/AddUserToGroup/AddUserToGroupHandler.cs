@@ -1,8 +1,6 @@
-using EzyChat.Application.Hubs;
 using EzyChat.Application.Interfaces;
 using EzyChat.Domain.Enums;
 using MediatR;
-using Microsoft.AspNetCore.SignalR;
 using EzyChat.Application.DTOs.Common;
 using EzyChat.Application.DTOs.Messages;
 
@@ -42,8 +40,9 @@ public class AddMemberToGroupHandler(
             JoinedAt = DateTime.UtcNow,
             IsAdmin = false
         };
-        group.MemberCount += 1;
         await groupMemberRepository.AddAsync(groupMember, cancellationToken);
+        
+        group.MemberCount += 1;
         await groupRepository.UpdateAsync(group, cancellationToken);
         
         // Create notification message
@@ -68,8 +67,6 @@ public class AddMemberToGroupHandler(
             GroupId = notificationMessage.GroupId,
         };
         
-        groupDto.MemberCount += 1;
-
         object data = new
         {
             NewMemberId = newMember.Id,

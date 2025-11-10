@@ -1,10 +1,9 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
-import { SendMessageRequest, Message, MessageType, ActiveChat, Conversation, User } from '@/types/chat.types';
+import { SendMessageRequest, MessageType, ActiveChat, Conversation, User } from '@/types/chat.types';
 import { UseChatReturn } from './useChat';
 import { UseSignalRReturn } from './useSignalR';
 import { FileUploadReturn } from './useFileUpload';
-import { group } from 'console';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface UseChatHandlersProps {
@@ -34,17 +33,15 @@ export const useChatHandlers = ({
     setActiveChat(activeChat);
     if(activeChat.id){
       if (activeChat.type === 'user' && activeChat.conversationId) {
-        console.log('Loading messages for conversation:', activeChat.conversationId);
         await chat.loadUserMessages(activeChat.conversationId);
 
       } else if (activeChat.type === 'group' && activeChat.groupId) {
-        console.log('Loading messages for group:', activeChat.groupId);
         await chat.loadGroupMessages(activeChat.groupId);
       }
     }
 
     if (activeChat.type === 'group') {
-      await signalR.joinGroup(activeChat.id);
+      //await signalR.joinGroup(activeChat.id);
     } else if (activeChat.type === 'user' && activeChat.conversationId) {
       await chat.markConversationAsRead(activeChat.conversationId, activeChat.id);
     }
@@ -67,15 +64,11 @@ export const useChatHandlers = ({
       const messageData: SendMessageRequest = {
         messageType: fileData ? fileData.messageType : MessageType.Text,
         content: messageInput.trim() || '',
-        //groupId: activeChat.type === 'group' ? activeChat.groupId : undefined,
-        //receiverId: activeChat.type === 'user' ? activeChat.receiverId : undefined,
-        //conversationId: activeChat.type === 'user' ? activeChat.conversationId : undefined,
         fileUrl: fileData ? fileData.fileUrl : undefined,
         fileName: fileData ? fileData.fileName : undefined,
         fileSize: fileData ? fileData.fileSize : undefined,
         fileType: fileData ? fileData.fileType : undefined,
         type: activeChat.type,
-        //groupName: activeChat.type === 'group' ? activeChat.name : '',
       };
 
       if(activeChat.type === 'group'){
@@ -139,7 +132,6 @@ export const useChatHandlers = ({
     if (!userName.trim()) return;
     
     try {
-      await signalR.joinGroup(groupId);
       await chat.addMemberToGroup(groupId, userName);
       toast.success('Member added successfully!');
     } catch (error: any) {

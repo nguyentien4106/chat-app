@@ -22,7 +22,6 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
   showSender = false,
 }) => {
 
-  console.log("Rendering MessageItem:", message);
   // Notification messages - centered and styled differently
   if (message.messageType === MessageType.Notification) {
     return (

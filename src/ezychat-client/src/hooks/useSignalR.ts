@@ -17,6 +17,7 @@ export interface UseSignalRReturn {
   sendMessage: (message: SendMessageRequest) => Promise<Message | undefined>;
   joinGroup: (groupId: string) => Promise<void>;
   leaveGroup: (groupId: string) => Promise<void>;
+  removeUserFromGroup: (groupId: string, userId: string) => Promise<void>;
   
   // onMessage events
   onReceiveMessage: (callback: (message: Message) => void) => void;
@@ -250,15 +251,24 @@ export const useSignalR = (): UseSignalRReturn => {
   }, [connection, isConnected]);
 
   const joinGroup = useCallback(async (groupId: string): Promise<void> => {
-    if (connection && isConnected) {
+    console.log("joinGroup called with groupId:", groupId, connection, isConnected);
+    if (connection) {
       console.log(`Joining group ${groupId} via SignalR`);
       await connection.invoke('JoinGroup', groupId);
     }
   }, [connection, isConnected]);
 
   const leaveGroup = useCallback(async (groupId: string): Promise<void> => {
-    if (connection && isConnected) {
+    console.log("leaveGroup called with groupId:", groupId, connection, isConnected);
+    if (connection) {
       await connection.invoke('LeaveGroup', groupId);
+    }
+  }, [connection, isConnected]);
+
+  const removeUserFromGroup = useCallback(async (groupId: string, userId: string): Promise<void> => {
+    console.log("removeUserFromGroup called with groupId:", groupId, connection, isConnected);
+    if (connection) {
+      await connection.invoke('RemoveUserFromGroup', groupId, userId);
     }
   }, [connection, isConnected]);
 
@@ -275,8 +285,9 @@ export const useSignalR = (): UseSignalRReturn => {
   const onMemberLeftGroup = useCallback((callback: (data: any) => void) => {
     if (connection) {
       connection.off('OnMemberLeftGroup');
-      connection.on('OnMemberLeftGroup', (data) => {
-        leaveGroup(data.group.id);
+      connection.on('OnMemberLeftGroup', async (data) => {
+        console.log("Member left group signalr event", data);
+        await leaveGroup(data.group.id);
         callback(data);
       });
     }
@@ -286,8 +297,9 @@ export const useSignalR = (): UseSignalRReturn => {
     if (connection) {
       connection.off('OnMemberJoinGroup');
       connection.on('OnMemberJoinGroup', async (data) => {
-        await joinGroup(data.group.id);
+        console.log("Member joined group signalr event", data);
         callback(data);
+        await joinGroup(data.group.id);
       });
     }
   }, [connection]);
@@ -297,14 +309,20 @@ export const useSignalR = (): UseSignalRReturn => {
   const onGroupHasNewMember = useCallback((callback: (data: any) => void) => {
     if (connection) {
       connection.off('OnGroupHasNewMember');
-      connection.on('OnGroupHasNewMember', callback);
+      connection.on('OnGroupHasNewMember', (data) => {
+        console.log("Group new member signalr event", data);
+        callback(data);
+      });
     }
   }, [connection]);
 
   const onGroupHasMemberLeft = useCallback((callback: (data: any) => void) => {
     if (connection) {
       connection.off('OnGroupHasMemberLeft');
-      connection.on('OnGroupHasMemberLeft', callback);
+      connection.on('OnGroupHasMemberLeft', (data) => {
+        console.log("Group member left signalr event", data);
+        callback(data);
+      });
     }
   }, [connection, isConnected]);
 
@@ -322,6 +340,7 @@ export const useSignalR = (): UseSignalRReturn => {
     sendMessage,
     joinGroup,
     leaveGroup,
+    removeUserFromGroup,
     
     onReceiveMessage,
     

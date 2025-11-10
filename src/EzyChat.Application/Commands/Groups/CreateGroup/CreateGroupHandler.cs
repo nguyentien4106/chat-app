@@ -28,7 +28,8 @@ public class CreateGroupHandler(
             Name = request.Name,
             Description = request.Description,
             CreatedById = request.CreatedById,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            MemberCount = 1
         };
 
         var member = new GroupMember

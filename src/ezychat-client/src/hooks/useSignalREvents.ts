@@ -103,7 +103,6 @@ export const useSignalREvents = ({
 
     // on message event
     signalR.onReceiveMessage((message) => {
-      console.log('Received message signalr event', message);
       updateChatSideBar(message);
       updateNotifications(message);
 
@@ -115,17 +114,12 @@ export const useSignalREvents = ({
     
     // on group event
     signalR.onGroupHasNewMember((data) => {
-      console.log('Member added to group signalr event', data);
       chat.onGroupMemberEvent({ group: data.group, groupId: data.group.id, memberCount: data.group.memberCount });
 
       if (groupOpening(data.group.id)) {
         chat.onMessagesEvent(data.message);
       }
 
-      if (isCurrentUser(data.newMemberId)) {
-        chat.onGroupEvent({ groupId: data.group.id, event: 'createdGroup', group: data.group });
-        toast.success(`You are added to group ${data.group.name}`);
-      }
     });
 
     signalR.onGroupHasMemberLeft((data) => {
@@ -133,17 +127,7 @@ export const useSignalREvents = ({
       if (groupOpening(data.groupId)) {
         chat.onMessagesEvent(data.message);
       }
-
-      if (isCurrentUser(data.removeMemberId)) {
-        chat.onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
-      }
-
-      if (currentUserOpeningGroup(data.groupId, data.removeMemberId)) {
-        setActiveChat(null);
-        toast.info('You have been removed from the group');
-      }
     });
-
 
     signalR.onGroupDeleted((data) => {
       chat.onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
@@ -152,7 +136,6 @@ export const useSignalREvents = ({
     // onMember event
 
     signalR.onMemberJoinGroup((data) => {
-      console.log('onMemberJoinGroup', data)
       if(!isCurrentUser(data.newMemberId)) return;
 
       chat.onGroupEvent({ groupId: data.group.id, event: 'createdGroup', group: data.group });
@@ -161,12 +144,15 @@ export const useSignalREvents = ({
 
     signalR.onMemberLeftGroup((data) => {
       if (isCurrentUser(data.removeMemberId)) {
-        setActiveChat(null);
         chat.onGroupEvent({ groupId: data.groupId, event: 'removedGroup', group: null });
       }
 
       if (groupOpening(data.groupId)) {
         chat.onMessagesEvent(data.message);
+      }
+
+      if (currentUserOpeningGroup(data.groupId, data.removeMemberId)) {
+        setActiveChat(null);
       }
     });
 
