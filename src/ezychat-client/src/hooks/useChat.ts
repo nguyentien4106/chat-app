@@ -25,6 +25,8 @@ export interface UseChatReturn {
   
   loadConversations: (loadMore?: boolean) => Promise<void>;
   addConversation: (conversation: Conversation) => void;
+  updateConversation: (conversationId: string, receiverId: string, lastMessage: string) => void;
+
   loadGroups: (loadMore?: boolean) => Promise<void>;
   loadUserMessages: (conversationId: string, loadMore?: boolean) => Promise<void>;
   loadGroupMessages: (groupId: string, loadMore?: boolean) => Promise<void>;
@@ -402,6 +404,19 @@ export const useChat = (): UseChatReturn => {
     }
   }, []);
 
+  const updateConversation = useCallback((conversationId: string, receiverId: string, lastMessage: string) => {
+    setConversations(prev => {
+      return prev.map(c => {
+        if (c.userId === receiverId && !c.id) {
+          console.log('Updating conversation:', { ...c, conversationId: conversationId, lastMessage: lastMessage });
+          
+          return { ...c, conversationId: conversationId, lastMessage: lastMessage };
+        }
+        return c;
+      });
+    })
+  }, []); 
+
   return {
     conversations,
     isLoadingConversations,
@@ -415,6 +430,7 @@ export const useChat = (): UseChatReturn => {
     hasMoreMessages,
     loadConversations,
     addConversation,
+    updateConversation,
     loadGroups,
     loadUserMessages,
     loadGroupMessages,

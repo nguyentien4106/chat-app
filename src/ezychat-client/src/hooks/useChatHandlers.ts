@@ -84,6 +84,9 @@ export const useChatHandlers = ({
       
       const newMessage = await signalR.sendMessage(messageData);
       chat.addMessage(newMessage!);
+      if(newMessage?.isNewConversation){
+        chat.updateConversation(newMessage?.conversationId!, newMessage!.receiverId!, newMessage!.content!);
+      }
       chat.onLastMessageEvent && chat.onLastMessageEvent(newMessage!);
       setMessageInput('');
       fileUpload.clearSelection();
