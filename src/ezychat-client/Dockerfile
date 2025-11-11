@@ -1,6 +1,14 @@
 # Build stage
 FROM node:20-alpine AS builder
 
+# Accept build arguments
+ARG VITE_API_URL
+ARG VITE_SIGNALR_HUB_URL
+
+# Set as environment variables for the build
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_SIGNALR_HUB_URL=$VITE_SIGNALR_HUB_URL
+
 WORKDIR /app
 
 # Copy package files
@@ -12,7 +20,7 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application (Vite will use the ENV variables)
 RUN npm run build
 
 # Production stage
