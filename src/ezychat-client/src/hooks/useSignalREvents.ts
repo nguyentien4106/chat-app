@@ -100,7 +100,6 @@ export const useSignalREvents = ({
   
   useEffect(() => {
     if (!connection) return;
-
     // on message event
     signalR.onReceiveMessage((message) => {
       updateChatSideBar(message);

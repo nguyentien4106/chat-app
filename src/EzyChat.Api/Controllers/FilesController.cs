@@ -1,65 +1,61 @@
 
 using EzyChat.Api.Controllers.Base;
+using EzyChat.Application.Commands.Files.DeleteFile;
+using EzyChat.Application.Commands.Files.UploadFile;
 using EzyChat.Application.Commands.Messages.SendMessage;
 using EzyChat.Application.DTOs.Messages;
-using EzyChat.Application.Interfaces;
 using EzyChat.Application.Models;
-using EzyChat.Domain.Enums;
+using EzyChat.Application.Settings;
 using Microsoft.AspNetCore.Authorization;
+
+namespace EzyChat.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class FilesController(IStorageService storageService, IMediator mediator) : AuthenticatedControllerBase
+public class FilesController(IMediator mediator, FileUploadSettings fileUploadSettings) : AuthenticatedControllerBase
 {
-    private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp" };
-    private static readonly string[] AllowedFileExtensions = { ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".txt", ".zip", ".rar" };
-    private const long MaxFileSize = 10 * 1024 * 1024; // 10MB
-    private const long MaxImageSize = 5 * 1024 * 1024; // 5MB
-
     [HttpPost("upload")]
-    [RequestSizeLimit(10 * 1024 * 1024)] // 10MB
     public async Task<ActionResult<AppResponse<FileUploadResponse>>> UploadFile(IFormFile? file)
     {
         if (file == null || file.Length == 0)
         {
-            return BadRequest("No file uploaded");
+            return AppResponse<FileUploadResponse>.Error("No file uploaded");
         }
 
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        var isImage = AllowedImageExtensions.Contains(extension);
-        var isAllowedFile = AllowedFileExtensions.Contains(extension);
+        var isImage = fileUploadSettings.AllowedImageExtensions.Contains(extension);
+        var isAllowedFile = fileUploadSettings.AllowedFileExtensions.Contains(extension);
 
-        switch (isImage)
+        if (!isImage && !isAllowedFile)
         {
-            case false when !isAllowedFile:
-                return BadRequest("File type not allowed");
-            case true when file.Length > MaxImageSize:
-                return BadRequest($"Image size must be less than {MaxImageSize / 1024 / 1024}MB");
-            case false when file.Length > MaxFileSize:
-                return BadRequest($"File size must be less than {MaxFileSize / 1024 / 1024}MB");
-            default:
-                try
-                {
-                    await using var stream = file.OpenReadStream();
-                    var fileUrl = await storageService.UploadFileAsync(stream, file.FileName, file.ContentType);
-                    var result = AppResponse<FileUploadResponse>.Success(new FileUploadResponse
-                    {
-                        FileUrl = fileUrl,
-                        FileName = file.FileName,
-                        FileType = file.ContentType,
-                        FileSize = file.Length,
-                        MessageType = isImage ? MessageTypes.Image : MessageTypes.File
-                    });
-                    return Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, $"Error uploading file: {ex.Message}");
-                }
-
-                break;
+            return AppResponse<FileUploadResponse>.Error("File type not allowed. " + 
+                "Allowed image types: " + string.Join(", ", fileUploadSettings.AllowedImageExtensions) + "\n. " +
+                "Allowed file types: " + string.Join(", ", fileUploadSettings.AllowedFileExtensions));
         }
+
+        if (isImage && file.Length > fileUploadSettings.MaxImageSize)
+        {
+            return AppResponse<FileUploadResponse>.Error($"Image size must be less than {fileUploadSettings.MaxImageSize / 1024 / 1024}MB");
+        }
+
+        if (!isImage && file.Length > fileUploadSettings.MaxFileSize)
+        {
+            return AppResponse<FileUploadResponse>.Error($"File size must be less than {fileUploadSettings.MaxFileSize / 1024 / 1024}MB");
+        }
+
+        await using var stream = file.OpenReadStream();
+        var command = new UploadFileCommand
+        {
+            FileStream = stream,
+            FileName = file.FileName,
+            ContentType = file.ContentType,
+            FileSize = file.Length,
+            IsImage = isImage
+        };
+
+        var response = await mediator.Send(command);
+        return Ok(response);
     }
 
     [HttpPost("send")]
@@ -85,18 +81,18 @@ public class FilesController(IStorageService storageService, IMediator mediator)
     }
 
     [HttpDelete("{fileUrl}")]
-    public async Task<ActionResult> DeleteFile(string fileUrl)
+    public async Task<ActionResult<AppResponse<bool>>> DeleteFile(string fileUrl)
     {
         var decodedUrl = Uri.UnescapeDataString(fileUrl);
-        var result = await storageService.DeleteFileAsync(decodedUrl);
+        var command = new DeleteFileCommand { FileUrl = decodedUrl };
+        var response = await mediator.Send(command);
         
-        if (result)
+        if (!response.IsSuccess)
         {
-            return Ok();
+            return NotFound(response);
         }
         
-        return NotFound("File not found");
+        return Ok(response);
     }
-
 }
 

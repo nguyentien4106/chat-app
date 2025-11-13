@@ -34,8 +34,7 @@ export const useChatHandlers = ({
     if (newActiveChat.type === 'user' && newActiveChat.conversationId && newActiveChat.unreadCount! > 0) {
       await chat.markConversationAsRead(newActiveChat.conversationId, newActiveChat.id);
     } 
-
-    if(activeChat?.id == newActiveChat.id && activeChat.type === newActiveChat.type){
+    if(activeChat && activeChat.id && activeChat?.id == newActiveChat.id && activeChat.type === newActiveChat.type){
       return;
     }
     setActiveChat(newActiveChat);
@@ -55,7 +54,7 @@ export const useChatHandlers = ({
     setTimeout(() => {
       messageInputRef.current?.focus();
     }, 100);
-  }, [setActiveChat, chat.loadUserMessages, chat.loadGroupMessages, signalR.joinGroup, chat.markConversationAsRead, messageInputRef]);
+  }, [activeChat, setActiveChat, chat.loadUserMessages, chat.loadGroupMessages, signalR.joinGroup, chat.markConversationAsRead, messageInputRef]);
 
   const handleSendMessage = useCallback(async (): Promise<void> => {
     if ((!messageInput.trim() && !fileUpload.selectedFile) || !activeChat) return;

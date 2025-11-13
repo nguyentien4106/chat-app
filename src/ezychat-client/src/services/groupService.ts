@@ -1,7 +1,6 @@
 import { Group, GroupInfo, InviteLinkResponse, Message } from "@/types/chat.types";
 import { PaginatedResponse, PaginationRequest } from "@/types";
 import { apiService } from "./api";
-import { formatISO } from "date-fns/formatISO";
 
 export const groupService = {
   getUserGroups: (params?: PaginationRequest) => {

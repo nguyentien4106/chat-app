@@ -9,6 +9,7 @@ import { useAutoScroll } from '@/hooks/useAutoScroll';
 import { useAuth } from '@/contexts/AuthContext';
 import { ActiveChat, Conversation, Message, User } from '@/types/chat.types';
 import { JWT_CLAIMS } from '@/constants/jwtClaims';
+import { toast } from 'sonner';
 
 interface ChatContextType {
   // User
@@ -138,9 +139,15 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // File handlers
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, isImage: boolean): void => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    fileUpload.selectFile(file, isImage);
+    try {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        fileUpload.selectFile(file, isImage);
+    }
+    catch (error) {
+        console.error('Error selecting file:', error);
+        toast.error('Failed to select file. ' + (error instanceof Error ? error.message : String(error)));
+    }
   };
 
   const handleImageSelect = () => imageInputRef.current?.click();

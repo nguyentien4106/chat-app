@@ -282,8 +282,7 @@ export const useSignalR = (): UseSignalRReturn => {
     if (connection) {
       connection.off('OnMemberLeftGroup');
       connection.on('OnMemberLeftGroup', async (data) => {
-        console.log("Member left group signalr event", data);
-        await leaveGroup(data.group.id);
+        await leaveGroup(data.groupId);
         callback(data);
       });
     }
@@ -293,7 +292,6 @@ export const useSignalR = (): UseSignalRReturn => {
     if (connection) {
       connection.off('OnMemberJoinGroup');
       connection.on('OnMemberJoinGroup', async (data) => {
-        console.log("Member joined group signalr event", data);
         callback(data);
         await joinGroup(data.group.id);
       });
@@ -306,7 +304,6 @@ export const useSignalR = (): UseSignalRReturn => {
     if (connection) {
       connection.off('OnGroupHasNewMember');
       connection.on('OnGroupHasNewMember', (data) => {
-        console.log("Group new member signalr event", data);
         callback(data);
       });
     }
@@ -316,7 +313,6 @@ export const useSignalR = (): UseSignalRReturn => {
     if (connection) {
       connection.off('OnGroupHasMemberLeft');
       connection.on('OnGroupHasMemberLeft', (data) => {
-        console.log("Group member left signalr event", data);
         callback(data);
       });
     }

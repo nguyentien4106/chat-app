@@ -9,11 +9,21 @@ public class LoggingBehaviour<TRequest, TResponse>(ILogger<TRequest> logger) : I
 {
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        var requestData = JsonSerializer.Serialize(request, new JsonSerializerOptions 
-        { 
-            WriteIndented = false,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        string requestData;
+        try
+        {
+            requestData = JsonSerializer.Serialize(request, new JsonSerializerOptions 
+            { 
+                WriteIndented = false,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
+            });
+        }
+        catch (Exception)
+        {
+            // If serialization fails (e.g., due to streams or other non-serializable properties)
+            requestData = $"<Unable to serialize {typeof(TRequest).Name}>";
+        }
         
         logger.LogInformation("[START] Handle request={Request} - Response={Response} - RequestData={RequestData}",
             typeof(TRequest).Name, typeof(TResponse).Name, requestData);

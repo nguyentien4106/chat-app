@@ -4,6 +4,7 @@ using EzyChat.Infrastructure;
 using EzyChat.Api.Middlewares;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.OpenApi.Models;
 
 namespace EzyChat.Api;
@@ -13,6 +14,20 @@ public static class DependencyInjectionExtensions
     public static IServiceCollection AddApi(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSettings(configuration);
+
+        // Configure global request size limit from settings
+        var fileUploadSettings = configuration.GetSection("FileUploadSettings").Get<FileUploadSettings>() ?? new FileUploadSettings();
+
+        services.Configure<IISServerOptions>(options =>
+        {
+            options.MaxRequestBodySize = fileUploadSettings.MaxFileSize;
+        });
+        
+        services.Configure<KestrelServerOptions>(options =>
+        {
+            options.Limits.MaxRequestBodySize = fileUploadSettings.MaxFileSize;
+        });
+        
         services.AddControllers()
             .AddJsonOptions(options =>
             {
@@ -98,6 +113,10 @@ public static class DependencyInjectionExtensions
         var r2Settings = configuration.GetSection("R2Settings").Get<R2Settings>() ?? new R2Settings();
         ArgumentNullException.ThrowIfNull(r2Settings, "R2Settings was missed !");
         services.AddSingleton(r2Settings);
+        
+        var fileUploadSettings = configuration.GetSection("FileUploadSettings").Get<FileUploadSettings>() ?? new FileUploadSettings();
+        ArgumentNullException.ThrowIfNull(fileUploadSettings, "FileUploadSettings was missed !");
+        services.AddSingleton(fileUploadSettings);
         
         return services;
     }
