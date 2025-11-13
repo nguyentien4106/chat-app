@@ -51,7 +51,8 @@ export const ChatSidebar: React.FC = () => {
         conversationId: existingConversation.id,
         receiverId: existingConversation.userId,
         name: existingConversation.userName,
-        userFullName: existingConversation.userFullName
+        userFullName: existingConversation.userFullName,
+        unreadCount: existingConversation.unreadCount
       });
     } else {
       handleStartChat(user);

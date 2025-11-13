@@ -18,7 +18,7 @@ public class SendMessageCommand : ICommand<AppResponse<MessageDto>>
     public string? FileType { get; set; }
     public long? FileSize { get; set; }
     
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
     public string Type { get; set; } = string.Empty;
     public string GroupName { get; set; } = string.Empty;
     public string SenderUserName { get; set; } = string.Empty;

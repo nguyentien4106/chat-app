@@ -20,21 +20,21 @@ services:
       timeout: 5s
       retries: 5
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: ezychat-pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@ezychat.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    networks:
-      - ezychat-network
-    depends_on:
-      - postgres
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: ezychat-pgadmin
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@ezychat.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+  #     PGADMIN_CONFIG_SERVER_MODE: 'False'
+  #   ports:
+  #     - "5050:80"
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
+  #   networks:
+  #     - ezychat-network
+  #   depends_on:
+  #     - postgres
 
   api:
     image: nguyentien0620/ezychat-api:${TAG:-latest}
@@ -47,8 +47,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:6060
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=EzyChatDb;Username=postgres;Password=Ti100600@;"
-      JwtSettings__Issuer: "http://54.151.135.81"
-      JwtSettings__Audience: "http://54.151.135.81"
+      JwtSettings__Issuer: "http://54.151.135.81:3000"
+      JwtSettings__Audience: "http://54.151.135.81:3000"
       JwtSettings__AccessTokenExpirationMinutes: 1440
     ports:
       - "6060:6060"
@@ -64,10 +64,15 @@ services:
     build:
       context: ./src/ezychat-client
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: "http://54.151.135.81:6060"
+        VITE_SIGNALR_HUB_URL: "ws://54.151.135.81:6060/hubs/chat"
     platform: linux/amd64
     container_name: ezychat-client
     networks:
       - ezychat-network
+    ports:
+      - "3000:3000"
     depends_on:
       - api
     restart: unless-stopped

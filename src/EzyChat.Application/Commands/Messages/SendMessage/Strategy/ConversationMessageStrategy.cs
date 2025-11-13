@@ -27,7 +27,7 @@ public class ConversationMessageStrategy(
             {
                 SenderId = command.SenderId,
                 ReceiverId = command.ReceiverId ?? Guid.Empty,
-                LastMessageAt = DateTime.UtcNow
+                LastMessageAt = DateTime.Now
             };
             await conversationRepository.AddAsync(conversation, cancellationToken);
             message.ConversationId = conversation.Id;

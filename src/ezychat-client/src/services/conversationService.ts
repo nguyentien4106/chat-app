@@ -24,11 +24,11 @@ export const conversationService = {
     apiService.post<Conversation>('/api/conversations', { userId }),
   markAsRead: (conversationId: string) =>
     apiService.post<number>(`/api/conversations/${conversationId}/mark-read`, {}),
-  getConversationMessages: (conversationId: string, beforeDateTime?: string) => {
+  getConversationMessages: (conversationId: string, beforeDateTime?: Date) => {
     const queryParams = new URLSearchParams();
     // Use current time if no beforeDateTime provided (initial load)
     if (beforeDateTime) {
-      queryParams.append('beforeDateTime', beforeDateTime);
+      queryParams.append('beforeDateTime', beforeDateTime.toString());
     }
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
     return apiService.get<PaginatedResponse<Message>>(

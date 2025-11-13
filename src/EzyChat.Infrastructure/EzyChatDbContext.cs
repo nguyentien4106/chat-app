@@ -26,6 +26,18 @@ public class EzyChatDbContext(DbContextOptions<EzyChatDbContext> options) : Iden
         
         // Apply all entity configurations from the assembly
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+        
+        // Configure all DateTime columns as timestamp without timezone
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                {
+                    property.SetColumnType("timestamp without time zone");
+                }
+            }
+        }
     }
 
 }

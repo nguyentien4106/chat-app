@@ -82,7 +82,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
         {message.content && <p className="break-words">{message.content}</p>}
 
         <p className="text-xs opacity-70 mt-1">
-          {new Date(message.createdAt).toLocaleTimeString()}
+          {new Date(message.createdAt).toLocaleTimeString()} - {new Date(message.createdAt).toLocaleDateString()}
         </p>
       </div>
     </div>

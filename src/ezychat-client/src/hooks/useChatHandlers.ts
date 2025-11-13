@@ -29,22 +29,28 @@ export const useChatHandlers = ({
 }: UseChatHandlersProps) => {
   const { user } = useAuth();
   
-  const handleChatSelect = useCallback(async (activeChat: ActiveChat) => {
-    setActiveChat(activeChat);
-    if(activeChat.id){
-      if (activeChat.type === 'user' && activeChat.conversationId) {
-        await chat.loadUserMessages(activeChat.conversationId);
+  const handleChatSelect = useCallback(async (newActiveChat: ActiveChat) => {
 
-      } else if (activeChat.type === 'group' && activeChat.groupId) {
-        await chat.loadGroupMessages(activeChat.groupId);
+    if (newActiveChat.type === 'user' && newActiveChat.conversationId && newActiveChat.unreadCount! > 0) {
+      await chat.markConversationAsRead(newActiveChat.conversationId, newActiveChat.id);
+    } 
+
+    if(activeChat?.id == newActiveChat.id && activeChat.type === newActiveChat.type){
+      return;
+    }
+    setActiveChat(newActiveChat);
+    if(newActiveChat.id){
+      if (newActiveChat.type === 'user' && newActiveChat.conversationId) {
+        await chat.loadUserMessages(newActiveChat.conversationId);
+
+      } else if (newActiveChat.type === 'group' && newActiveChat.groupId) {
+        await chat.loadGroupMessages(newActiveChat.groupId);
       }
     }
 
-    if (activeChat.type === 'group') {
-      //await signalR.joinGroup(activeChat.id);
-    } else if (activeChat.type === 'user' && activeChat.conversationId) {
-      await chat.markConversationAsRead(activeChat.conversationId, activeChat.id);
-    }
+    if (newActiveChat.type === 'user' && newActiveChat.conversationId && chat.conversations.find(c => c.id === newActiveChat.conversationId)?.unreadCount! > 0) {
+      await chat.markConversationAsRead(newActiveChat.conversationId, newActiveChat.id);
+    } 
     
     setTimeout(() => {
       messageInputRef.current?.focus();
@@ -86,6 +92,14 @@ export const useChatHandlers = ({
       chat.addMessage(newMessage!);
       if(newMessage?.isNewConversation){
         chat.updateConversation(newMessage?.conversationId!, newMessage!.receiverId!, newMessage!.content!);
+        setActiveChat({
+          id: newMessage!.conversationId!,
+          name: activeChat.name,
+          type: activeChat.type,
+          conversationId: newMessage?.conversationId,
+          receiverId: activeChat.receiverId,
+          userFullName: activeChat.userFullName
+        });
       }
       chat.onLastMessageEvent && chat.onLastMessageEvent(newMessage!);
       setMessageInput('');

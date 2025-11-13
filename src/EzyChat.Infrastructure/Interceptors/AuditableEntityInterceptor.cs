@@ -29,16 +29,16 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
             {
                 case EntityState.Added:
                     entry.Entity.CreatedBy = "API";
-                    entry.Entity.CreatedAt = DateTime.UtcNow;
-                    entry.Entity.LastModified = DateTime.UtcNow;
+                    entry.Entity.CreatedAt = DateTime.Now;
+                    entry.Entity.LastModified = DateTime.Now;
                     entry.Entity.LastModifiedBy = "API";
                     break;
                 case EntityState.Modified:
-                    entry.Entity.LastModified = DateTime.UtcNow;
+                    entry.Entity.LastModified = DateTime.Now;
                     entry.Entity.LastModifiedBy = "API";
                     break;
                 case EntityState.Deleted:
-                    entry.Entity.Deleted = DateTime.UtcNow;
+                    entry.Entity.Deleted = DateTime.Now;
                     entry.Entity.DeletedBy = "API";
                     break;
             }

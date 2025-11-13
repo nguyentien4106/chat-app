@@ -46,7 +46,7 @@ public class GroupsController(IMediator mediator) : AuthenticatedControllerBase
         {
             GroupId = groupId,
             UserId = CurrentUserId,
-            BeforeDateTime = beforeDateTime ?? DateTime.UtcNow
+            BeforeDateTime = beforeDateTime ?? DateTime.Now
         };
         var response = await mediator.Send(query);
         return Ok(response);

@@ -7,7 +7,6 @@ import { groupService } from '@/services/groupService';
 import { useAuth } from '@/contexts/AuthContext';
 import { PaginationRequest } from '@/types';
 import { defaultPaginationRequest } from '@/constants';
-import { formatISO } from 'date-fns';
 
 export interface UseChatReturn {
   conversations: Conversation[];
@@ -178,11 +177,11 @@ export const useChat = (): UseChatReturn => {
       setIsLoadingMessages(true);
       
       // For cursor-based pagination, use the oldest message's createdAt as beforeDateTime
-      let beforeDateTime = "";
+      let beforeDateTime: Date | undefined = undefined;
       if (loadMore && messages.length > 0) {
         // Find the oldest message (first in the array since they're chronological)
         const oldestMessage = messages[0];
-        beforeDateTime = formatISO(new Date(oldestMessage.createdAt));
+        beforeDateTime = oldestMessage.createdAt;
       }
 
       const result = await conversationService.getConversationMessages(conversationId, beforeDateTime);
@@ -227,11 +226,11 @@ export const useChat = (): UseChatReturn => {
       setIsLoadingMessages(true);
       
       // For cursor-based pagination, use the oldest message's createdAt as beforeDateTime
-      let beforeDateTime = "";
+      let beforeDateTime: Date | undefined = undefined;
       if (loadMore && messages.length > 0) {
         // Find the oldest message (first in the array since they're chronological)
         const oldestMessage = messages[0];
-        beforeDateTime = formatISO(new Date(oldestMessage.createdAt));
+        beforeDateTime = oldestMessage.createdAt;
       }
 
       const result = await groupService.getGroupMessages(groupId, beforeDateTime);
@@ -408,9 +407,12 @@ export const useChat = (): UseChatReturn => {
     setConversations(prev => {
       return prev.map(c => {
         if (c.userId === receiverId && !c.id) {
-          console.log('Updating conversation:', { ...c, conversationId: conversationId, lastMessage: lastMessage });
-          
-          return { ...c, conversationId: conversationId, lastMessage: lastMessage };
+          return { 
+            ...c, 
+            conversationId, 
+            lastMessage,
+            id: conversationId
+          };
         }
         return c;
       });

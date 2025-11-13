@@ -53,7 +53,7 @@ public class ConversationsController(IMediator mediator) : AuthenticatedControll
         {
             ConversationId = conversationId,
             CurrentUserId = CurrentUserId,
-            BeforeDateTime = beforeDateTime ?? DateTime.UtcNow
+            BeforeDateTime = beforeDateTime ?? DateTime.Now
         };
 
         var response = await mediator.Send(query);

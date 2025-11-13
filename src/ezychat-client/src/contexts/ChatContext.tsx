@@ -101,6 +101,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { messagesEndRef } = useAutoScroll({
     isLoadingMessages: chat.isLoadingMessages,
     messages: chat.messages,
+    currentUserId,
   });
   
   // Load initial data

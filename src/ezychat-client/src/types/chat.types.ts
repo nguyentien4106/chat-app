@@ -82,6 +82,7 @@ export interface ActiveChat {
   conversationId?: string; // For direct messages - null when starting a new chat
   receiverId?: string; // For direct messages - the other user's ID
   groupId?: string; // For group messages
+  unreadCount?: number;
 }
 
 export interface SendMessageRequest {

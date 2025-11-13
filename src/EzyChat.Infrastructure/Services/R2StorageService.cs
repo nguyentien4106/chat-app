@@ -82,7 +82,7 @@ public class R2StorageService(R2Settings r2Settings) : IStorageService
             BucketName = r2Settings.BucketName,
             Key = key,
             Verb = HttpVerb.GET,
-            Expires = DateTime.UtcNow.AddDays(7),
+            Expires = DateTime.Now.AddDays(7),
         };
 
         return await _s3Client.GetPreSignedURLAsync(presign);

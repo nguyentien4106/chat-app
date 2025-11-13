@@ -22,11 +22,11 @@ export const groupService = {
     return apiService.get<PaginatedResponse<Group>>(`/api/groups${queryString}`);
   },
 
-  getGroupMessages: (groupId: string, beforeDateTime?: string) => {
+  getGroupMessages: (groupId: string, beforeDateTime?: Date) => {
     const queryParams = new URLSearchParams();
     // Use current time if no beforeDateTime provided (initial load)
     if (beforeDateTime) {
-      const dateTime = formatISO(new Date(beforeDateTime));
+      const dateTime = beforeDateTime.toString();
       queryParams.append('beforeDateTime', dateTime);
     }
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';

@@ -37,7 +37,7 @@ public class AddMemberToGroupHandler(
             Id = Guid.NewGuid(),
             GroupId = request.GroupId,
             UserId = newMember.Id,
-            JoinedAt = DateTime.UtcNow,
+            JoinedAt = DateTime.Now,
             IsAdmin = false
         };
         await groupMemberRepository.AddAsync(groupMember, cancellationToken);
@@ -53,7 +53,7 @@ public class AddMemberToGroupHandler(
             MessageType = MessageTypes.Notification,
             SenderId = newMember.Id,
             GroupId = request.GroupId,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.Now,
         };
 
         await messageRepository.AddAsync(notificationMessage, cancellationToken);

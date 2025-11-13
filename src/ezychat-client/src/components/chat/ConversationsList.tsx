@@ -73,7 +73,8 @@ export const ConversationsList: React.FC = () => {
                   type: "user",
                   conversationId: conv.id,
                   receiverId: conv.userId,
-                  userFullName: conv.userFullName
+                  userFullName: conv.userFullName,
+                  unreadCount: conv.unreadCount
                 })
               }
             />

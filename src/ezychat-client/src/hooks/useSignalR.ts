@@ -18,7 +18,7 @@ export interface UseSignalRReturn {
   joinGroup: (groupId: string) => Promise<void>;
   leaveGroup: (groupId: string) => Promise<void>;
   removeUserFromGroup: (groupId: string, userId: string) => Promise<void>;
-  
+
   // onMessage events
   onReceiveMessage: (callback: (message: Message) => void) => void;
   
@@ -251,22 +251,18 @@ export const useSignalR = (): UseSignalRReturn => {
   }, [connection, isConnected]);
 
   const joinGroup = useCallback(async (groupId: string): Promise<void> => {
-    console.log("joinGroup called with groupId:", groupId, connection, isConnected);
     if (connection) {
-      console.log(`Joining group ${groupId} via SignalR`);
       await connection.invoke('JoinGroup', groupId);
     }
   }, [connection, isConnected]);
 
   const leaveGroup = useCallback(async (groupId: string): Promise<void> => {
-    console.log("leaveGroup called with groupId:", groupId, connection, isConnected);
     if (connection) {
       await connection.invoke('LeaveGroup', groupId);
     }
   }, [connection, isConnected]);
 
   const removeUserFromGroup = useCallback(async (groupId: string, userId: string): Promise<void> => {
-    console.log("removeUserFromGroup called with groupId:", groupId, connection, isConnected);
     if (connection) {
       await connection.invoke('RemoveUserFromGroup', groupId, userId);
     }

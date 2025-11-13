@@ -20,7 +20,7 @@ public class ApplicationUser : IdentityUser<Guid>
     // Conversations where this user is User2
     public ICollection<Conversation> ConversationsAsReceiver { get; set; } = [];
     
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime? UpdatedAt { get; set; }
     public string? UpdatedBy { get; set; }
     

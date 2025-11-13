@@ -20,7 +20,7 @@ export const MessageList: React.FC = () => {
   const activeChatIdRef = useRef<string | null>(null);
   const hasScrolledDownRef = useRef(false);
 
-  // Track when active chat changes and prevent immediate threshold trigger
+  // Track when active chat changes and set initial state
   useEffect(() => {
     const currentChatId = activeChat?.id || null;
     
@@ -29,6 +29,12 @@ export const MessageList: React.FC = () => {
       canLoadMoreRef.current = false;
       hasScrolledDownRef.current = false;
       activeChatIdRef.current = currentChatId;
+      
+      // After a short delay, enable loading (gives time for initial scroll to bottom)
+      setTimeout(() => {
+        canLoadMoreRef.current = true;
+        hasScrolledDownRef.current = true;
+      }, 500);
     }
   }, [activeChat?.id]);
 
@@ -45,20 +51,13 @@ export const MessageList: React.FC = () => {
       const scrollTop = viewport.scrollTop;
       const threshold = 100; // Load more when within 100px of top
 
-      // Track if user has scrolled down from the initial position
-      if (scrollTop > threshold && !hasScrolledDownRef.current) {
-        hasScrolledDownRef.current = true;
-        canLoadMoreRef.current = true;
-      }
-
       // Check if user scrolled near the top and we have more messages to load
       if (
         scrollTop <= threshold && 
         hasMoreMessages && 
         !isLoadingMessages && 
         !isLoadingMoreRef.current &&
-        canLoadMoreRef.current &&
-        hasScrolledDownRef.current
+        canLoadMoreRef.current
       ) {
         isLoadingMoreRef.current = true;
         

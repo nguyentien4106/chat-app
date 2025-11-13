@@ -28,7 +28,7 @@ public class GenerateLinkHandler(
         }
         
         group.InviteCode = Guid.NewGuid().ToString("N").Substring(0, 8);
-        group.InviteCodeExpiresAt = DateTime.UtcNow.AddDays(OneDay);
+        group.InviteCodeExpiresAt = DateTime.Now.AddDays(OneDay);
 
         await groupRepository.UpdateAsync(group, cancellationToken: cancellationToken);
 
