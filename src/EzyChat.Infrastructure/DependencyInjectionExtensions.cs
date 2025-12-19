@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using EzyChat.Domain.Entities;
@@ -146,7 +145,6 @@ public static class DependencyInjectionExtensions
 
         services.AddScoped<IEzyChatDbContext, EzyChatDbContext>();
         services.AddSingleton<IStorageService, R2StorageService>();
-        services.AddScoped<IMessagesService, MessagesServices>();
 
         // Repository registration
         services.AddScoped(typeof(IRepositoryPagedQuery<>), typeof(PagedQueryRepository<>));

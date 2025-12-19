@@ -21,6 +21,10 @@ public class Message : Entity<Guid>
     public Guid? GroupId { get; set; }
     public Group? Group { get; set; }
     public bool IsRead { get; set; }
+    
+    // Navigation property for pinned messages
+    public ICollection<PinMessage> PinMessages { get; set; } = [];
+    
     // Helper method to check if message is a direct message
     public bool IsDirectMessage() => ConversationId.HasValue;
     // Helper method to check if message is a group message

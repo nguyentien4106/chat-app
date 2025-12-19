@@ -30,6 +30,9 @@ export interface UseSignalRReturn {
   // onMember events
   onMemberLeftGroup: (callback: (data: {  removeMemberId: string, groupId: string; message: Message, memberCount: number }) => void) => void;
   onMemberJoinGroup: (callback: (data: { newMemberId: string; group: Group; message: Message }) => void) => void;
+  
+  onPinMessage: (callback: (data: any) => void) => void;
+  onUnpinMessage: (callback: (data: any) => void) => void;
 }
 
 export const useSignalR = (): UseSignalRReturn => {
@@ -325,6 +328,25 @@ export const useSignalR = (): UseSignalRReturn => {
     }
   }, [connection, isConnected]); 
 
+
+  const onUnpinMessage = useCallback((callback: (data: any) => void) => {
+    if (connection) {
+      connection.off('OnMessageUnpinned');
+      connection.on('OnMessageUnpinned', (data) => {
+        callback(data);
+      });
+    }
+  }, [connection]);
+
+  const onPinMessage = useCallback((callback: (data: any) => void) => {
+    if (connection) {
+      connection.off('OnMessagePinned');
+      connection.on('OnMessagePinned', (data) => {
+        callback(data);
+      });
+    }
+  }, [connection]);
+
   return {
     connection,
     isConnected,
@@ -341,6 +363,10 @@ export const useSignalR = (): UseSignalRReturn => {
     onGroupDeleted,
 
     onMemberLeftGroup,
-    onMemberJoinGroup
+    onMemberJoinGroup,
+
+    onPinMessage,
+    onUnpinMessage
+
   };
 };

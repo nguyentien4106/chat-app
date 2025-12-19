@@ -1,11 +1,16 @@
 import React from "react";
-import { Download, Paperclip } from "lucide-react";
+import { Download, Paperclip, Pin } from "lucide-react";
 import { Message, MessageType } from "@/types/chat.types";
+import { MessageOptions } from "./MessageOptions";
+import { DateTimeFormat } from "@/constants";
+import { format } from "date-fns";
 
 interface MessageItemProps {
   message: Message;
   isOwn: boolean;
   showSender?: boolean;
+  onPin?: (message: Message) => void;
+  onUnpin?: (message: Message) => void;
 }
 
 const formatFileSize = (bytes?: number): string => {
@@ -20,6 +25,8 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
   message,
   isOwn,
   showSender = false,
+  onPin,
+  onUnpin,
 }) => {
 
   // Notification messages - centered and styled differently
@@ -34,19 +41,27 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
   }
 
   return (
-    <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-          isOwn
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-foreground border"
-        }`}
-      >
-        {showSender && !isOwn && message.senderUserName && (
-          <p className="text-xs font-semibold mb-1 opacity-70">
-            {message.senderUserName}
-          </p>
-        )}
+    <div className={`flex ${isOwn ? "justify-end" : "justify-start"} group`}>
+      <div className="relative flex items-start gap-2">
+        <div
+          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+            isOwn
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-foreground border"
+          }`}
+        >
+          {message.isPinned && (
+            <div className="flex items-center gap-1 text-xs mb-1 opacity-70">
+              <Pin className="w-3 h-3" />
+              <span>Pinned</span>
+            </div>
+          )}
+          
+          {showSender && !isOwn && message.senderUserName && (
+            <p className="text-xs font-semibold mb-1 opacity-70">
+              {message.senderUserName}
+            </p>
+          )}
 
         {message.messageType === MessageType.Image && message.fileUrl && (
           <div className="mb-2">
@@ -79,11 +94,23 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
           </div>
         )}
 
-        {message.content && <p className="break-words">{message.content}</p>}
+          {message.content && <p className="break-words">{message.content}</p>}
 
-        <p className="text-xs opacity-70 mt-1">
-          {new Date(message.createdAt).toLocaleTimeString()} - {new Date(message.createdAt).toLocaleDateString()}
-        </p>
+          <p className="text-xs opacity-70 mt-1">
+            {format(new Date(message.createdAt), DateTimeFormat)}
+          </p>
+        </div>
+        
+        {/* Message options menu */}
+        {onPin && onUnpin && (
+          <div className="self-start mt-2">
+            <MessageOptions
+              message={message}
+              onPin={onPin}
+              onUnpin={onUnpin}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

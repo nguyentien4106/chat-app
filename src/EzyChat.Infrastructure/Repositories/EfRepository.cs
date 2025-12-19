@@ -343,4 +343,8 @@ public class EfRepository<TEntity>(
         return await dbSet.FindAsync(id) != null;
     }
 
+    public override IQueryable<TEntity> GetQuery()
+    {
+        return dbSet.AsQueryable();
+    }
 } 

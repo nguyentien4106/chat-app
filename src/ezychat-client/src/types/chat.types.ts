@@ -17,7 +17,7 @@ export enum MessageType {
 }
 
 export interface Message {
-  id: string | number;
+  id: string;
   senderId: string;
   senderUserName?: string;
   receiverId?: string;
@@ -34,6 +34,18 @@ export interface Message {
   groupName: string
   isNewConversation: boolean;
   senderFullName: string;
+  isPinned?: boolean;
+}
+
+export interface PinMessage {
+  id: number;
+  messageId: string;
+  pinnedByUserId: string;
+  pinnedByUserName: string;
+  createdAt: Date;
+  conversationId?: string;
+  groupId?: string;
+  message: Message;
 }
 
 export interface Conversation {

@@ -7,7 +7,7 @@ import { useChatHandlers } from '@/hooks/useChatHandlers';
 import { useSignalREvents } from '@/hooks/useSignalREvents';
 import { useAutoScroll } from '@/hooks/useAutoScroll';
 import { useAuth } from '@/contexts/AuthContext';
-import { ActiveChat, Conversation, Message, User } from '@/types/chat.types';
+import { ActiveChat, Conversation, Message, PinMessage, User } from '@/types/chat.types';
 import { JWT_CLAIMS } from '@/constants/jwtClaims';
 import { toast } from 'sonner';
 
@@ -32,6 +32,9 @@ interface ChatContextType {
   isLoadingMessages: boolean;
   hasMoreMessages: boolean;
   
+  // Pinned Messages
+  pinMessages: PinMessage[];
+  
   // Conversations & Groups
   conversations: Conversation[];
   isLoadingConversations: boolean;
@@ -41,6 +44,9 @@ interface ChatContextType {
   isLoadingGroups: boolean;
   hasMoreGroups: boolean;
   loadMoreGroups: () => Promise<void>;
+  pinMessage: (messageId: string, conversationId?: string, groupId?: string) => Promise<void>;
+  unpinMessage: (messageId: string, conversationId?: string, groupId?: string) => Promise<void>;
+  loadPinMessages: (conversationId?: string, groupId?: string) => Promise<void>;
 
   // File Upload
   isUploading: boolean;
@@ -179,6 +185,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isLoadingMessages: chat.isLoadingMessages,
     hasMoreMessages: chat.hasMoreMessages,
     
+    // Pinned Messages
+    pinMessages: chat.pinMessages,
+    
     // Conversations & Groups
     conversations: chat.conversations,
     isLoadingConversations: chat.isLoadingConversations,
@@ -188,7 +197,10 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isLoadingGroups: chat.isLoadingGroups,
     hasMoreGroups: chat.hasMoreGroups,
     loadMoreGroups: async () => await chat.loadGroups(true),
-    
+    pinMessage: chat.pinMessage,
+    unpinMessage: chat.unpinMessage,
+    loadPinMessages: chat.loadPinMessages,
+
     // File Upload
     isUploading: fileUpload.isUploading,
     selectedFile: fileUpload.selectedFile,

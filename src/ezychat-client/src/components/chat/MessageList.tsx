@@ -11,7 +11,10 @@ export const MessageList: React.FC = () => {
     messagesEndRef, 
     isLoadingMessages, 
     hasMoreMessages, 
-    handleLoadMoreMessages 
+    handleLoadMoreMessages,
+    pinMessage,
+    unpinMessage,
+    loadPinMessages
   } = useChatContext();
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -110,6 +113,12 @@ export const MessageList: React.FC = () => {
                 message={msg}
                 isOwn={msg.senderId === currentUserId}
                 showSender={activeChat?.type === "group"}
+                onPin={async (message) => {
+                  await pinMessage(message.id, activeChat?.conversationId, activeChat?.groupId);
+                }}
+                onUnpin={async (message) => {
+                  await unpinMessage(message.id, activeChat?.conversationId, activeChat?.groupId);
+                }}
               />
             ))
           )}

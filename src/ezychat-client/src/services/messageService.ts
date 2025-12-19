@@ -1,4 +1,4 @@
-import { Message } from '@/types/chat.types';
+import { Message, PinMessage } from '@/types/chat.types';
 import { apiService } from './api';
 
 export const messageService = {
@@ -17,5 +17,24 @@ export const messageService = {
     fileName?: string;
     fileType?: string;
     fileSize?: number;
-  }) => apiService.post<Message>('/api/messages', data)
+  }) => apiService.post<Message>('/api/messages', data),
+
+  pinMessage: (data: {
+    messageId: string;
+    conversationId?: string;
+    groupId?: string;
+  }) => apiService.post<PinMessage>('/api/messages/pin', data),
+
+  unpinMessage: (messageId: string, conversationId?: string, groupId?: string) => {
+    const queryString = conversationId ? `conversationId=${conversationId}` : groupId ? `groupId=${groupId}` : '';
+    
+    return apiService.delete<boolean>(`/api/messages/unpin?messageId=${messageId}&${queryString}`);
+  }
+    ,
+
+  getPinnedMessages: (conversationId?: string, groupId?: string) =>
+  {
+    const queryString = conversationId ? `conversationId=${conversationId}` : groupId ? `groupId=${groupId}` : '';
+    return apiService.get<PinMessage[]>(`/api/messages/pinned?${queryString}`);
+  }
 };

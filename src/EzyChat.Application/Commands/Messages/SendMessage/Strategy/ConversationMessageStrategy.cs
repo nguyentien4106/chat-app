@@ -49,7 +49,7 @@ public class ConversationMessageStrategy(
 
         // Send via SignalR to the specific user
         await hubContext.Clients.User(command.ReceiverId!.Value.ToString())
-            .SendAsync("OnReceiveMessage", messageDto, cancellationToken);  
+            .SendAsync("OnReceiveMessage", messageDto, cancellationToken);
         
         return AppResponse<MessageDto>.Success(messageDto);
     }

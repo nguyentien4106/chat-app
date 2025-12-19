@@ -6,10 +6,11 @@ namespace EzyChat.Domain.Entities;
 public class Conversation : Entity<Guid>
 {
     public Guid SenderId { get; set; }
-    public ApplicationUser Sender { get; set; }
+    public ApplicationUser Sender { get; set; } = null!;
     public Guid ReceiverId { get; set; }
-    public ApplicationUser Receiver { get; set; }
+    public ApplicationUser Receiver { get; set; } = null!;
     public ICollection<Message> Messages { get; set; } = [];
+    public ICollection<PinMessage> PinnedMessages { get; set; } = [];
     public DateTime LastMessageAt { get; set; }
     
     // Helper method to check if a user is part of this conversation

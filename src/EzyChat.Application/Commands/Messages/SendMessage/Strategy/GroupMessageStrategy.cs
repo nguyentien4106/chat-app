@@ -6,8 +6,7 @@ namespace EzyChat.Application.Commands.Messages.SendMessage.Strategy;
 
 public class GroupMessageStrategy(
     IRepository<Message> messageRepository,
-    IHubContext<ChatHub> hubContext,
-    IUserRepository userRepository
+    IHubContext<ChatHub> hubContext
 ) : ISendMessageStrategy
 {
     public bool CanHandle(SendMessageCommand command)

@@ -28,9 +28,7 @@ export const useChatHandlers = ({
   fileUpload
 }: UseChatHandlersProps) => {
   const { user } = useAuth();
-  
   const handleChatSelect = useCallback(async (newActiveChat: ActiveChat) => {
-
     if (newActiveChat.type === 'user' && newActiveChat.conversationId && newActiveChat.unreadCount! > 0) {
       await chat.markConversationAsRead(newActiveChat.conversationId, newActiveChat.id);
     } 
@@ -49,7 +47,8 @@ export const useChatHandlers = ({
 
     if (newActiveChat.type === 'user' && newActiveChat.conversationId && chat.conversations.find(c => c.id === newActiveChat.conversationId)?.unreadCount! > 0) {
       await chat.markConversationAsRead(newActiveChat.conversationId, newActiveChat.id);
-    } 
+    }
+    chat.loadPinMessages(newActiveChat.type === 'user' ? newActiveChat.conversationId : undefined, newActiveChat.type === 'group' ? newActiveChat.groupId : undefined);
     
     setTimeout(() => {
       messageInputRef.current?.focus();

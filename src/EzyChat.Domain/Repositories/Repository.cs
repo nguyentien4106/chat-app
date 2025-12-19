@@ -39,4 +39,6 @@ public abstract class Repository<TEntity> : IRepository<TEntity> where TEntity :
     public abstract Task<bool> DeleteByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     public abstract Task<bool> ExistsAsync(Guid id);
+
+    public abstract IQueryable<TEntity> GetQuery();
 }

@@ -1,12 +1,13 @@
 
 // src/hooks/useChat.ts
-import { useState, useCallback, useRef } from 'react';
-import type { Conversation, Group, Message } from '@/types/chat.types';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import type { Conversation, Group, Message, PinMessage } from '@/types/chat.types';
 import { conversationService } from '@/services/conversationService';
 import { groupService } from '@/services/groupService';
 import { useAuth } from '@/contexts/AuthContext';
 import { PaginationRequest } from '@/types';
 import { defaultPaginationRequest } from '@/constants';
+import { messageService } from '@/services/messageService';
 
 export interface UseChatReturn {
   conversations: Conversation[];
@@ -17,6 +18,7 @@ export interface UseChatReturn {
   isLoadingGroups: boolean;
   hasMoreGroups: boolean;
 
+  pinMessages: PinMessage[];
   messages: Message[];
   messagesPagination: PaginationRequest;
   isLoadingMessages: boolean;
@@ -37,11 +39,17 @@ export interface UseChatReturn {
   addMemberToGroup: (groupId: string, userName: string) => Promise<void>;
   markConversationAsRead: (conversationId: string, senderId: string) => Promise<void>;
 
+  pinMessage: (messageId: string, conversationId?: string, groupId?: string) => Promise<void>;
+  unpinMessage: (messageId: string, conversationId?: string, groupId?: string) => Promise<void>;
+  loadPinMessages: (conversationId?: string, groupId?: string) => Promise<void>;
+
   //Events
   onGroupMemberEvent: (data: { groupId: string; memberCount: number; group?: Group }) => void;
   onGroupEvent: (data: { groupId: string; event: 'createdGroup' | 'removedGroup', group: Group | null }) => void;
   onMessagesEvent: (message: Message) => void;
   onLastMessageEvent?: (message: Message) => void;
+
+  // 
 }
 
 export const useChat = (): UseChatReturn => {
@@ -74,6 +82,31 @@ export const useChat = (): UseChatReturn => {
   const [messagesPagination, setMessagesPagination] = useState<PaginationRequest>(defaultPaginationRequest);
   const [isLoadingMessages, setIsLoadingMessages] = useState<boolean>(false);
   const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(false);
+  const [pinMessages, setPinMessages] = useState<PinMessage[]>([]);
+
+  // Helper function to mark messages as pinned
+  const markMessagesAsPinned = useCallback((msgs: Message[]): Message[] => {
+    const pinnedMessageIds = new Set(pinMessages.map(pm => pm.messageId));
+    return msgs.map(msg => ({
+      ...msg,
+      isPinned: pinnedMessageIds.has(msg.id)
+    }));
+  }, [pinMessages]);
+
+  // Update messages with isPinned status whenever pinMessages change
+  useEffect(() => {
+    if (pinMessages.length > 0 && messages.length > 0) {
+      setMessages(prevMessages => markMessagesAsPinned(prevMessages));
+    } else if (pinMessages.length === 0 && messages.length > 0) {
+      // Clear all isPinned flags when no messages are pinned
+      setMessages(prevMessages => 
+        prevMessages.map(msg => ({
+          ...msg,
+          isPinned: false
+        }))
+      );
+    }
+  }, [pinMessages, markMessagesAsPinned]);
 
   const loadConversations = useCallback(async (loadMore: boolean = false) => {
     try {
@@ -197,7 +230,7 @@ export const useChat = (): UseChatReturn => {
       }
 
       // Reverse messages to show chronologically (oldest to newest)
-      const chronologicalMessages = [...result.items].reverse();
+      const chronologicalMessages = markMessagesAsPinned([...result.items].reverse());
       
       if (loadMore) {
         // Prepend older messages
@@ -214,7 +247,7 @@ export const useChat = (): UseChatReturn => {
     } finally {
       setIsLoadingMessages(false);
     }
-  }, [isLoadingMessages, hasMoreMessages, messages]);
+  }, [isLoadingMessages, hasMoreMessages, messages, markMessagesAsPinned]);
 
   const loadGroupMessages = useCallback(async (groupId: string, loadMore: boolean = false) => {
     try {
@@ -246,7 +279,7 @@ export const useChat = (): UseChatReturn => {
       }
 
       // Reverse messages to show chronologically (oldest to newest)
-      const chronologicalMessages = [...result.items].reverse();
+      const chronologicalMessages = markMessagesAsPinned([...result.items].reverse());
       
       if (loadMore) {
         // Prepend older messages
@@ -263,7 +296,7 @@ export const useChat = (): UseChatReturn => {
     } finally {
       setIsLoadingMessages(false);
     }
-  }, [isLoadingMessages, hasMoreMessages, messages]);
+  }, [isLoadingMessages, hasMoreMessages, messages, markMessagesAsPinned]);
 
   const addMessage = useCallback((message: Message) => {
     setMessages(prev => {
@@ -272,9 +305,11 @@ export const useChat = (): UseChatReturn => {
       if (messageExists) {
         return prev;
       }
-      return [...prev, message];
+      // Mark the new message with pinned status
+      const markedMessage = markMessagesAsPinned([message])[0];
+      return [...prev, markedMessage];
     });
-  }, []);
+  }, [markMessagesAsPinned]);
 
   const createGroup = useCallback(async (name: string, description?: string) => {
     try {
@@ -419,6 +454,24 @@ export const useChat = (): UseChatReturn => {
     })
   }, []); 
 
+  const pinMessage = useCallback(async (messageId: string, conversationId?: string, groupId?: string) => {
+    await messageService.pinMessage({ messageId, conversationId, groupId });
+  }, []);
+
+  const unpinMessage = useCallback(async (messageId: string, conversationId?: string, groupId?: string) => {
+    await messageService.unpinMessage(messageId, conversationId, groupId);
+  }, []); 
+
+  const loadPinMessages = useCallback(async (conversationId?: string, groupId?: string) => {
+    try {
+      const result = await messageService.getPinnedMessages(conversationId, groupId);
+      console.log('Pinned messages loaded:', result);
+      setPinMessages(result);
+    } catch (error) {
+      console.error('Error loading pinned messages:', error);
+    }
+  }, []);
+
   return {
     conversations,
     isLoadingConversations,
@@ -426,6 +479,7 @@ export const useChat = (): UseChatReturn => {
     groups,
     isLoadingGroups,
     hasMoreGroups,
+    pinMessages,
     messages,
     messagesPagination,
     isLoadingMessages,
@@ -446,6 +500,9 @@ export const useChat = (): UseChatReturn => {
     onGroupMemberEvent,
     onGroupEvent,
     onMessagesEvent,
-    onLastMessageEvent
+    onLastMessageEvent,
+    pinMessage,
+    unpinMessage,
+    loadPinMessages
   };
 };

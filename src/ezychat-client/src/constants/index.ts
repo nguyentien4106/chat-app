@@ -12,3 +12,5 @@ export const defaultPaginationRequest: PaginationRequest = {
     pageSize: 50,
     sortOrder: 'asc',
 };
+
+export const DateTimeFormat = 'yyyy-MM-dd HH:mm:ss';

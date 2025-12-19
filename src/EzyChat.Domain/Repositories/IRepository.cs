@@ -39,4 +39,6 @@ public interface IRepository<TEntity>
 
     Task<bool> ExistsAsync(Guid id);
 
+    IQueryable<TEntity> GetQuery();
+
 }

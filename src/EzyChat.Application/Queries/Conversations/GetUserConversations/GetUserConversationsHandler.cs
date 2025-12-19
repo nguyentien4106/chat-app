@@ -8,8 +8,7 @@ namespace EzyChat.Application.Queries.Conversations.GetUserConversations;
 
 public class GetUserConversationsHandler(
     IUserRepository userRepository,
-    IRepositoryPagedQuery<Conversation> pagedConversationRepository,
-    IEzyChatDbContext context
+    IRepositoryPagedQuery<Conversation> pagedConversationRepository
     ) : IRequestHandler<GetUserConversationsQuery, AppResponse<PagedResult<ConversationDto>>>
 {
     public async Task<AppResponse<PagedResult<ConversationDto>>> Handle(GetUserConversationsQuery request, CancellationToken cancellationToken)
@@ -18,7 +17,7 @@ public class GetUserConversationsHandler(
         var pagedConversations = await pagedConversationRepository.GetPagedResultAsync(
             request,
             filter: c => c.SenderId == request.UserId || c.ReceiverId == request.UserId,
-            includeProperties: ["Messages"],
+            includeProperties: [nameof(Conversation.Messages)],
             cancellationToken: cancellationToken
         );
 

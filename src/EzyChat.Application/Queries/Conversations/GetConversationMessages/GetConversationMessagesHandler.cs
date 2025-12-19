@@ -34,7 +34,7 @@ public class GetConversationMessagesHandler(
             request.BeforeDateTime,
             id: request.ConversationId,
             type: "conversation",
-            includeProperties: ["Sender"],
+            includeProperties: [nameof(Message.Sender)],
             cancellationToken: cancellationToken);
 
         return AppResponse<PagedResult<MessageDto>>.Success(pagedMessages);

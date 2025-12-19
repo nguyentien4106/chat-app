@@ -4,6 +4,7 @@ import type { HubConnection } from '@microsoft/signalr';
 import { ActiveChat, Message, Group } from '@/types/chat.types';
 import { UseChatReturn } from './useChat';
 import { UseSignalRReturn } from './useSignalR';
+import { sign } from 'crypto';
 
 interface UseSignalREventsProps {
   connection: HubConnection | null;
@@ -152,6 +153,20 @@ export const useSignalREvents = ({
 
       if (currentUserOpeningGroup(data.groupId, data.removeMemberId)) {
         setActiveChat(null);
+      }
+    });
+
+    signalR.onPinMessage((data) => {
+      if(groupOpening(data.groupId) || thisUserOpeningConversation(data.conversationId)){
+        chat.loadPinMessages(data.conversationId, data.groupId);
+        chat.onMessagesEvent(data.message);
+      }
+    });
+
+    signalR.onUnpinMessage((data) => {
+      if(groupOpening(data.groupId) || thisUserOpeningConversation(data.conversationId)){
+        chat.loadPinMessages(data.conversationId, data.groupId);
+        chat.onMessagesEvent(data.message);
       }
     });
 

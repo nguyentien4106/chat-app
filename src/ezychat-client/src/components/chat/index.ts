@@ -6,3 +6,4 @@ export { MessageItem } from "./MessageItem";
 export { MessageInput } from "./MessageInput";
 export { FilePreview } from "./FilePreview";
 export { EmptyChatState } from "./EmptyChatState";
+export { PinnedMessages } from "./PinnedMessages";

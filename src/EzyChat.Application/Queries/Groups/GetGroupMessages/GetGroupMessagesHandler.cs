@@ -15,7 +15,7 @@ public class GetGroupMessagesHandler(
         // Verify the group exists
         var group = await groupRepository.GetByIdAsync(
             request.GroupId,
-            includeProperties: ["Members"],
+            includeProperties: [nameof(Group.Members)],
             cancellationToken: cancellationToken);
 
         if (group == null)
@@ -34,7 +34,7 @@ public class GetGroupMessagesHandler(
             request.BeforeDateTime,
             id: request.GroupId,
             type: "group",
-            includeProperties: ["Sender"],
+            includeProperties: [nameof(Message.Sender)],
             cancellationToken: cancellationToken);
 
         return AppResponse<PagedResult<MessageDto>>.Success(pagedMessages);
