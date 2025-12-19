@@ -4,11 +4,12 @@ using EzyChat.Application.Models;
 using EzyChat.Domain.Exceptions;
 using EzyChat.Domain.Repositories;
 using Mapster;
+using Microsoft.EntityFrameworkCore;
 
 namespace EzyChat.Application.Commands.QuickMessages.UpdateQuickMessage;
 
 public class UpdateQuickMessageCommandHandler(
-    IQuickMessageRepository quickMessageRepository
+    IRepository<QuickMessage> quickMessageRepository
 ) : ICommandHandler<UpdateQuickMessageCommand, AppResponse<QuickMessageDto>>
 {
     public async Task<AppResponse<QuickMessageDto>> Handle(UpdateQuickMessageCommand request, CancellationToken cancellationToken)
@@ -23,16 +24,18 @@ public class UpdateQuickMessageCommandHandler(
         // Verify ownership
         if (quickMessage.UserId != request.UserId)
         {
-            throw new BadRequestException("You do not have permission to update this quick message");
+            return AppResponse<QuickMessageDto>.Error("You do not have permission to update this quick message");
         }
 
         // Check if new key conflicts with another quick message
         if (quickMessage.Key != request.Key)
         {
-            var keyExists = await quickMessageRepository.KeyExistsAsync(request.Key, request.UserId, cancellationToken);
+            var keyExists = await quickMessageRepository.GetQuery()
+                                    .AsNoTracking()
+                                    .AnyAsync(qm => qm.Key == request.Key && qm.UserId == request.UserId, cancellationToken);
             if (keyExists)
             {
-                throw new BadRequestException($"Quick message with key '{request.Key}' already exists");
+                return AppResponse<QuickMessageDto>.Error($"Quick message with key '{request.Key}' already exists");
             }
         }
 

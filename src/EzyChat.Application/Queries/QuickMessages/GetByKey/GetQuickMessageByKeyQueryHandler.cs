@@ -1,26 +1,21 @@
 using EzyChat.Application.DTOs.QuickMessages;
-using EzyChat.Application.Models;
 using EzyChat.Domain.Exceptions;
-using EzyChat.Domain.Repositories;
-using Mapster;
 
 namespace EzyChat.Application.Queries.QuickMessages;
 
 public class GetQuickMessageByKeyQueryHandler(
-    IQuickMessageRepository quickMessageRepository
-) : IQueryHandler<GetQuickMessageByKeyQuery, AppResponse<QuickMessageDto>>
+    IRepository<QuickMessage> quickMessageRepository
+) : IQueryHandler<GetQuickMessageByKeyQuery, AppResponse<List<QuickMessageDto>>>
 {
-    public async Task<AppResponse<QuickMessageDto>> Handle(GetQuickMessageByKeyQuery request, CancellationToken cancellationToken)
+    public async Task<AppResponse<List<QuickMessageDto>>> Handle(GetQuickMessageByKeyQuery request, CancellationToken cancellationToken)
     {
-        var quickMessage = await quickMessageRepository.GetByKeyAsync(request.Key, request.UserId, cancellationToken);
+        var quickMessages = await quickMessageRepository.GetAllAsync(
+            qm => qm.Key.StartsWith(request.Key) && qm.UserId == request.UserId,
+            cancellationToken: cancellationToken
+        );
         
-        if (quickMessage == null)
-        {
-            throw new NotFoundException($"Quick message with key '{request.Key}' not found");
-        }
+        var dto = quickMessages.Adapt<List<QuickMessageDto>>();
 
-        var dto = quickMessage.Adapt<QuickMessageDto>();
-
-        return AppResponse<QuickMessageDto>.Success(dto);
+        return AppResponse<List<QuickMessageDto>>.Success(dto);
     }
 }

@@ -6,7 +6,7 @@ using EzyChat.Domain.Repositories;
 namespace EzyChat.Application.Commands.QuickMessages.DeleteQuickMessage;
 
 public class DeleteQuickMessageCommandHandler(
-    IQuickMessageRepository quickMessageRepository
+    IRepository<QuickMessage> quickMessageRepository
 ) : ICommandHandler<DeleteQuickMessageCommand, AppResponse<bool>>
 {
     public async Task<AppResponse<bool>> Handle(DeleteQuickMessageCommand request, CancellationToken cancellationToken)
@@ -21,7 +21,7 @@ public class DeleteQuickMessageCommandHandler(
         // Verify ownership
         if (quickMessage.UserId != request.UserId)
         {
-            throw new BadRequestException("You do not have permission to delete this quick message");
+            return AppResponse<bool>.Error("You do not have permission to delete this quick message");
         }
 
         await quickMessageRepository.DeleteAsync(quickMessage, cancellationToken);
