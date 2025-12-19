@@ -15,6 +15,7 @@ public class EzyChatDbContext(DbContextOptions<EzyChatDbContext> options) : Iden
     public DbSet<GroupMember> GroupMembers => Set<GroupMember>();
     public DbSet<Message> Messages => Set<Message>();
     public DbSet<PinMessage> PinMessages => Set<PinMessage>();
+    public DbSet<QuickMessage> QuickMessages => Set<QuickMessage>();
     
     public DbSet<Conversation> Conversations => Set<Conversation>();
     

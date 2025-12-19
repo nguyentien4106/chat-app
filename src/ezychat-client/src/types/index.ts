@@ -27,3 +27,5 @@ export interface PaginationRequest {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
+
+export * from './quickMessage.types';

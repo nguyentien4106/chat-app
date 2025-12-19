@@ -1,7 +1,8 @@
 // ==========================================
 // src/components/Header.tsx (Updated with Logout)
 // ==========================================
-import { Bell, Moon, Sun, LogOut, User, Settings, Menu } from 'lucide-react'
+import { useState } from 'react'
+import { Bell, Moon, Sun, LogOut, User, Settings, Menu, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -16,12 +17,14 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useNavigate } from 'react-router-dom'
 import { JWT_CLAIMS } from '@/constants/jwtClaims'
+import { QuickMessageDialog } from '@/components/quick-message'
 
 export const Header = () => {
   const { isDark, toggleDark } = useDarkMode()
   const { user, logout } = useAuth()
   const { toggleSidebar } = useSidebar()
   const navigate = useNavigate()
+  const [showQuickMessages, setShowQuickMessages] = useState(false)
 
   const handleLogout = async () => {
     await logout()
@@ -38,25 +41,41 @@ export const Header = () => {
   }
 
   return (
-    <header className="h-16 border-b border-border bg-card px-4 md:px-6 flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={toggleSidebar}
-          className="shrink-0"
-        >
-          <Menu className="w-5 h-5" />
-        </Button>
-        <h2 className="text-lg font-semibold hidden sm:block">
-          {document.title || 'Ezy.Chat Management'}
-        </h2>
-      </div>
+    <>
+      <QuickMessageDialog
+        open={showQuickMessages}
+        onOpenChange={setShowQuickMessages}
+      />
       
-      <div className="flex items-center gap-1 md:gap-2">
-        <Button variant="ghost" size="icon" className="hidden sm:flex">
-          <Bell className="w-5 h-5" />
-        </Button>
+      <header className="h-16 border-b border-border bg-card px-4 md:px-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={toggleSidebar}
+            className="shrink-0"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+          <h2 className="text-lg font-semibold hidden sm:block">
+            {document.title || 'Ezy.Chat Management'}
+          </h2>
+        </div>
+        
+        <div className="flex items-center gap-1 md:gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="hidden sm:flex"
+            onClick={() => setShowQuickMessages(true)}
+            title="Quick Messages"
+          >
+            <Zap className="w-5 h-5" />
+          </Button>
+          
+          <Button variant="ghost" size="icon" className="hidden sm:flex">
+            <Bell className="w-5 h-5" />
+          </Button>
         
         <Button variant="ghost" size="icon" onClick={toggleDark}>
           {isDark ? (
@@ -100,5 +119,6 @@ export const Header = () => {
         </DropdownMenu>
       </div>
     </header>
+    </>
   )
 }

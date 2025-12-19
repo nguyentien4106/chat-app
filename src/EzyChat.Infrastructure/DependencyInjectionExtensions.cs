@@ -157,6 +157,7 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IRepository<GroupMember>, EfRepository<GroupMember>>();
         services.AddScoped<IRepository<Conversation>, EfRepository<Conversation>>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IQuickMessageRepository, QuickMessageRepository>();
         services.AddScoped<ISignalRService, SignalRService>();
         
         return services;

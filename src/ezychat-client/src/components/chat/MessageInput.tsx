@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Image, Paperclip, Loader2 } from "lucide-react";
+import { Send, Image, Paperclip, Loader2, Zap } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
+import { QuickMessageDialog } from "@/components/quick-message";
 
 
 export const MessageInput: React.FC = () => {
+  const [showQuickMessages, setShowQuickMessages] = useState(false);
+  
   const {
   messageInput,
   messageInputRef,
@@ -21,9 +24,41 @@ export const MessageInput: React.FC = () => {
 
 const hasSelectedFile = !!selectedFile;
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setMessageInput(value);
+    
+    // Check if user typed "/" standalone
+    if (value.endsWith("/")) {
+      setShowQuickMessages(true);
+    }
+  };
+
+  const handleSelectQuickMessage = (content: string) => {
+    setMessageInput(messageInput.slice(0, messageInput.length - 1) + content);
+    messageInputRef.current?.focus();
+  };
+
   return (
-    <div className="bg-card border-t p-4 flex-shrink-0">
+    <>
+      <QuickMessageDialog
+        open={showQuickMessages}
+        onOpenChange={setShowQuickMessages}
+        onSelectMessage={handleSelectQuickMessage}
+      />
+      
+      <div className="bg-card border-t p-4 flex-shrink-0">
       <div className="flex space-x-2">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setShowQuickMessages(true)}
+          disabled={!isConnected}
+          title="Quick Messages"
+        >
+          <Zap className="w-4 h-4" />
+        </Button>
+
         <Button
           variant="outline"
           size="icon"
@@ -45,9 +80,9 @@ const hasSelectedFile = !!selectedFile;
         <Input
           ref={messageInputRef}
           value={messageInput}
-          onChange={(e) => setMessageInput(e.target.value)}
+          onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
+          placeholder="Type a message or / for quick messages..."
           className="flex-1"
           disabled={!isConnected || isUploading}
         />
@@ -68,5 +103,6 @@ const hasSelectedFile = !!selectedFile;
         </Button>
       </div>
     </div>
+    </>
   );
 };
