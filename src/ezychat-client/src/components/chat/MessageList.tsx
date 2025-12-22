@@ -14,7 +14,6 @@ export const MessageList: React.FC = () => {
     handleLoadMoreMessages,
     pinMessage,
     unpinMessage,
-    loadPinMessages
   } = useChatContext();
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
